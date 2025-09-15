@@ -87,6 +87,24 @@ services:
     networks:
       openusp:
         ipv4_address: 10.5.0.6
+  openusp-cwmpacs:
+    build:
+      context: ..
+      dockerfile: ./build/controller/Dockerfile
+      target: cwmpacs
+    image: n4networks/openusp-cwmpacs:latest
+    container_name: openusp-cwmpacs
+    depends_on:
+       openusp-db:
+         condition: service_healthy
+    env_file:
+      - ../configs/openusp.env
+    ports:
+      - 7547:7547   # Standard TR-069 ACS port
+      - 7548:7548   # HTTPS TR-069 ACS port
+    networks:
+      openusp:
+        ipv4_address: 10.5.0.9
   openusp-agent:
     build:
       context: ..

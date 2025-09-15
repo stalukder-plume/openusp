@@ -2,6 +2,7 @@ TOP_DIR := $(shell pwd)
 SUBDIRS := $(TOP_DIR)/cmd/apiserver
 SUBDIRS += $(TOP_DIR)/cmd/cli
 SUBDIRS += $(TOP_DIR)/cmd/controller
+SUBDIRS += $(TOP_DIR)/cmd/cwmpacs
 
 
 .PHONY: build install clean
@@ -22,9 +23,14 @@ apiserver:
 cli:
 	  $(MAKE) -C cmd/cli -f Makefile build
 
+.PHONY: cwmpacs
+cwmpacs:
+	  $(MAKE) -C cmd/cwmpacs -f Makefile build
+
 .PHONY: images
 images:
 	docker buildx build -t n4networks/openusp-controller:latest -f build/controller/Dockerfile --push --platform=linux/amd64,linux/arm64 .
 	docker buildx build -t n4networks/openusp-apiserver:latest -f build/apiserver/Dockerfile --push --platform=linux/amd64,linux/arm64 .
 	docker buildx build -t n4networks/openusp-cli:latest -f build/cli/Dockerfile --push --platform=linux/amd64,linux/arm64 .
+	docker buildx build --target=cwmpacs -t n4networks/openusp-cwmpacs:latest -f build/controller/Dockerfile --push --platform=linux/amd64,linux/arm64 .
 

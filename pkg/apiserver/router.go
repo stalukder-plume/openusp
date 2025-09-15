@@ -73,5 +73,8 @@ func (as *ApiServer) setRoutesHandlers() error {
 
 	//router.HandleFunc("/network/{epId}/{type}", as.getNetwork).Methods("GET")
 
+	// Set up CWMP/TR-069 routes
+	as.setCwmpRoutesHandlers()
+
 	return nil
 }

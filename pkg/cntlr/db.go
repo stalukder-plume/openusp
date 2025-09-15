@@ -27,7 +27,7 @@ func (c *Cntlr) dbInit() error {
 	if err != nil {
 		return err
 	}
-	err = c.dbH.Init(dbClient)
+	err = c.dbH.InitCwmp(dbClient)
 	if err != nil {
 		return err
 	}

@@ -31,11 +31,12 @@ const (
 )
 
 type Cntlr struct {
-	cfg    cntlrCfg
-	dbH    db.UspDb
-	mtpH   mtp.MtpHandler
-	cacheH cacheHandler
-	agentH agentHandler
+	cfg     cntlrCfg
+	dbH     db.CwmpDb
+	mtpH    mtp.MtpHandler
+	cacheH  cacheHandler
+	agentH  agentHandler
+	cwmpMgr *CwmpManager
 	cntlrgrpc.UnimplementedGrpcServer
 }
 
@@ -74,6 +75,13 @@ func (c *Cntlr) Init() error {
 	if err := c.agentHandlerInit(); err != nil {
 		return err
 	}
+
+	// Initialize CWMP manager for TR-069 support
+	if err := c.InitCwmp(); err != nil {
+		log.Println("Error in CWMP Init:", err)
+		return err
+	}
+	log.Println("CWMP Init ...successful!")
 
 	log.Println("Cntlr has been initialized successfully, Version:", getVer())
 	return nil

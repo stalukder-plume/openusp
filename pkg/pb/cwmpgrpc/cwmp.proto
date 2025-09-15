@@ -1,0 +1,217 @@
+// Copyright 2023 N4-Networks.com
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package cwmpgrpc;
+
+option go_package = "github.com/n4-networks/openusp/pkg/pb/cwmpgrpc";
+
+// TR-069 CWMP gRPC service definitions
+service CwmpService {
+  // Get parameter values from TR-069 device
+  rpc GetParameterValues(GetParameterValuesReq) returns (GetParameterValuesRes);
+  
+  // Set parameter values on TR-069 device
+  rpc SetParameterValues(SetParameterValuesReq) returns (SetParameterValuesRes);
+  
+  // Get parameter names from TR-069 device
+  rpc GetParameterNames(GetParameterNamesReq) returns (GetParameterNamesRes);
+  
+  // Add object instance on TR-069 device
+  rpc AddObject(AddObjectReq) returns (AddObjectRes);
+  
+  // Delete object instance from TR-069 device
+  rpc DeleteObject(DeleteObjectReq) returns (DeleteObjectRes);
+  
+  // Reboot TR-069 device
+  rpc Reboot(RebootReq) returns (RebootRes);
+  
+  // Factory reset TR-069 device
+  rpc FactoryReset(FactoryResetReq) returns (FactoryResetRes);
+  
+  // Download file to TR-069 device
+  rpc Download(DownloadReq) returns (DownloadRes);
+  
+  // Upload file from TR-069 device
+  rpc Upload(UploadReq) returns (UploadRes);
+}
+
+// Common structures
+message ParameterValueStruct {
+  string name = 1;
+  string value = 2;
+  string type = 3;
+}
+
+message ParameterInfoStruct {
+  string name = 1;
+  bool writable = 2;
+}
+
+message DeviceIdStruct {
+  string manufacturer = 1;
+  string oui = 2;
+  string product_class = 3;
+  string serial_number = 4;
+}
+
+message EventStruct {
+  string event_code = 1;
+  string command_key = 2;
+}
+
+// GetParameterValues messages
+message GetParameterValuesReq {
+  string device_id = 1;
+  repeated string parameter_names = 2;
+}
+
+message GetParameterValuesRes {
+  bool success = 1;
+  string error_message = 2;
+  repeated ParameterValueStruct parameter_list = 3;
+}
+
+// SetParameterValues messages
+message SetParameterValuesReq {
+  string device_id = 1;
+  repeated ParameterValueStruct parameter_list = 2;
+  string parameter_key = 3;
+}
+
+message SetParameterValuesRes {
+  bool success = 1;
+  string error_message = 2;
+  int32 status = 3;
+}
+
+// GetParameterNames messages
+message GetParameterNamesReq {
+  string device_id = 1;
+  string parameter_path = 2;
+  bool next_level = 3;
+}
+
+message GetParameterNamesRes {
+  bool success = 1;
+  string error_message = 2;
+  repeated ParameterInfoStruct parameter_list = 3;
+}
+
+// AddObject messages
+message AddObjectReq {
+  string device_id = 1;
+  string object_name = 2;
+  string parameter_key = 3;
+}
+
+message AddObjectRes {
+  bool success = 1;
+  string error_message = 2;
+  uint32 instance_number = 3;
+  int32 status = 4;
+}
+
+// DeleteObject messages
+message DeleteObjectReq {
+  string device_id = 1;
+  string object_name = 2;
+  string parameter_key = 3;
+}
+
+message DeleteObjectRes {
+  bool success = 1;
+  string error_message = 2;
+  int32 status = 3;
+}
+
+// Reboot messages
+message RebootReq {
+  string device_id = 1;
+  string command_key = 2;
+}
+
+message RebootRes {
+  bool success = 1;
+  string error_message = 2;
+}
+
+// FactoryReset messages
+message FactoryResetReq {
+  string device_id = 1;
+}
+
+message FactoryResetRes {
+  bool success = 1;
+  string error_message = 2;
+}
+
+// Download messages
+message DownloadReq {
+  string device_id = 1;
+  string command_key = 2;
+  string file_type = 3;
+  string url = 4;
+  string username = 5;
+  string password = 6;
+  uint32 file_size = 7;
+  string target_filename = 8;
+  uint32 delay_seconds = 9;
+  string success_url = 10;
+  string failure_url = 11;
+}
+
+message DownloadRes {
+  bool success = 1;
+  string error_message = 2;
+  int32 status = 3;
+  string start_time = 4;
+  string complete_time = 5;
+}
+
+// Upload messages
+message UploadReq {
+  string device_id = 1;
+  string command_key = 2;
+  string file_type = 3;
+  string url = 4;
+  string username = 5;
+  string password = 6;
+  uint32 delay_seconds = 7;
+}
+
+message UploadRes {
+  bool success = 1;
+  string error_message = 2;
+  int32 status = 3;
+  string start_time = 4;
+  string complete_time = 5;
+}
+
+// Device registration and inform messages
+message InformReq {
+  DeviceIdStruct device_id = 1;
+  repeated EventStruct events = 2;
+  uint32 max_envelopes = 3;
+  string current_time = 4;
+  uint32 retry_count = 5;
+  repeated ParameterValueStruct parameter_list = 6;
+}
+
+message InformRes {
+  bool success = 1;
+  string error_message = 2;
+  uint32 max_envelopes = 3;
+}
