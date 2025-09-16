@@ -117,6 +117,29 @@ services:
     networks:
       openusp:
         ipv4_address: 10.5.0.7
+  openusp-swagger:
+    image: swaggerapi/swagger-ui:latest
+    container_name: openusp-swagger
+    ports:
+      - 8080:8080
+    environment:
+      SWAGGER_JSON: /app/openusp.yaml
+      BASE_URL: /swagger
+      VALIDATOR_URL: "null"
+      TRY_IT_OUT_ENABLED: "true"
+      FILTER: "true"
+      DISPLAY_OPERATION_ID: "true"
+      DEFAULT_MODEL_EXPAND_DEPTH: 3
+      DEFAULT_MODELS_EXPAND_DEPTH: 3
+      SHOW_EXTENSIONS: "true"
+      SHOW_COMMON_EXTENSIONS: "true"
+    volumes:
+      - ../api/openusp.yaml:/app/openusp.yaml
+    depends_on:
+      - openusp-apiserver
+    networks:
+      openusp:
+        ipv4_address: 10.5.0.10
 # The following container is to be created in interactive mode using docker run: ./scripts/docker/cli.sh
   openusp-cli:
     profiles:

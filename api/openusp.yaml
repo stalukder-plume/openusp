@@ -1,0 +1,1085 @@
+openapi: 3.0.3
+info:
+  title: OpenUSP API
+  description: |
+    OpenUSP REST API provides comprehensive device management capabilities for both USP (TR-369) and TR-069 CWMP devices.
+    
+    The API supports:
+    - USP device parameter and instance management
+    - TR-069 CWMP device operations
+    - Administrative functions
+    - Real-time device monitoring
+    
+    **Authentication**: The API uses HTTP Basic Authentication.
+    
+    **Base URL**: http://localhost:8081
+  version: 1.0.0
+  contact:
+    name: OpenUSP Project
+    url: https://openusp.org
+    email: support@openusp.org
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+
+servers:
+  - url: http://localhost:8081
+    description: Local development server
+  - url: https://localhost:8443
+    description: Local development server (HTTPS)
+
+security:
+  - basicAuth: []
+
+components:
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+      description: HTTP Basic Authentication with username and password
+
+  schemas:
+    # Common schemas
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: "Parameter not found"
+        code:
+          type: integer
+          description: Error code
+          example: 404
+        details:
+          type: object
+          description: Additional error details
+
+    # USP schemas
+    Agent:
+      type: object
+      properties:
+        endpointId:
+          type: string
+          description: USP agent endpoint identifier
+          example: "os::012345-000000000000"
+        connected:
+          type: boolean
+          description: Agent connection status
+        lastSeen:
+          type: string
+          format: date-time
+          description: Last communication timestamp
+        productClass:
+          type: string
+          description: Device product class
+        manufacturer:
+          type: string
+          description: Device manufacturer
+        modelName:
+          type: string
+          description: Device model name
+        softwareVersion:
+          type: string
+          description: Device software version
+
+    Parameter:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Parameter path
+          example: "Device.WiFi.Radio.1.Enable"
+        value:
+          oneOf:
+            - type: string
+            - type: number
+            - type: boolean
+          description: Parameter value
+        type:
+          type: string
+          enum: [string, int, uint, boolean, dateTime, base64, hexBinary]
+          description: Parameter data type
+
+    Instance:
+      type: object
+      properties:
+        path:
+          type: string
+          description: Instance path
+          example: "Device.WiFi.Radio.1."
+        uniqueKeys:
+          type: object
+          additionalProperties:
+            type: string
+          description: Unique key parameters for the instance
+        parameters:
+          type: object
+          additionalProperties:
+            type: string
+          description: Instance parameters
+
+    DmObject:
+      type: object
+      properties:
+        path:
+          type: string
+          description: Object path
+        multiInstance:
+          type: boolean
+          description: Whether object supports multiple instances
+        access:
+          type: string
+          enum: [readOnly, readWrite]
+          description: Access permissions
+        parameters:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              access:
+                type: string
+        events:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              args:
+                type: array
+                items:
+                  type: string
+        commands:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              inputs:
+                type: array
+                items:
+                  type: string
+              outputs:
+                type: array
+                items:
+                  type: string
+
+    # TR-069 CWMP schemas
+    CwmpDevice:
+      type: object
+      properties:
+        deviceId:
+          type: string
+          description: CWMP device identifier
+          example: "acs-device-001"
+        manufacturer:
+          type: string
+          description: Device manufacturer
+          example: "Broadcom"
+        oui:
+          type: string
+          description: Organizationally Unique Identifier
+          example: "001122"
+        productClass:
+          type: string
+          description: Product class
+          example: "BCM63138"
+        serialNumber:
+          type: string
+          description: Device serial number
+          example: "SN123456789"
+        softwareVersion:
+          type: string
+          description: Current software version
+          example: "2.1.0-beta"
+        hardwareVersion:
+          type: string
+          description: Hardware version
+          example: "1.0"
+        lastInformTime:
+          type: string
+          format: date-time
+          description: Last inform message timestamp
+        connectionRequestUrl:
+          type: string
+          format: uri
+          description: Connection request URL
+        isOnline:
+          type: boolean
+          description: Device online status
+
+    CwmpParameter:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Parameter name/path
+          example: "Device.WiFi.Radio.1.Enable"
+        value:
+          type: string
+          description: Parameter value
+        type:
+          type: string
+          description: Parameter type
+          example: "boolean"
+        writable:
+          type: boolean
+          description: Whether parameter is writable
+
+    FileTransferRequest:
+      type: object
+      required:
+        - url
+        - fileType
+      properties:
+        url:
+          type: string
+          format: uri
+          description: File URL for download/upload
+        fileType:
+          type: string
+          enum: [firmware, configuration, logFile, vendorConfig]
+          description: Type of file to transfer
+        targetFileName:
+          type: string
+          description: Target filename on device
+        username:
+          type: string
+          description: Authentication username for file server
+        password:
+          type: string
+          description: Authentication password for file server
+        delaySeconds:
+          type: integer
+          minimum: 0
+          description: Delay before starting transfer
+          default: 0
+        commandKey:
+          type: string
+          description: Command key for tracking
+
+    # Request/Response payloads
+    ParameterRequest:
+      type: object
+      properties:
+        parameters:
+          type: array
+          items:
+            type: string
+          description: List of parameter paths to retrieve
+          example: ["Device.WiFi.Radio.1.Enable", "Device.WiFi.Radio.1.Channel"]
+
+    ParameterSetRequest:
+      type: object
+      properties:
+        parameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/Parameter'
+
+    InstanceRequest:
+      type: object
+      properties:
+        instances:
+          type: array
+          items:
+            $ref: '#/components/schemas/Instance'
+
+    OperateRequest:
+      type: object
+      required:
+        - command
+      properties:
+        command:
+          type: string
+          description: Command to execute
+        arguments:
+          type: object
+          additionalProperties:
+            type: string
+          description: Command arguments
+
+    RebootRequest:
+      type: object
+      properties:
+        commandKey:
+          type: string
+          description: Command key for tracking the reboot
+          example: "reboot_001"
+
+    MtpInfo:
+      type: object
+      properties:
+        protocols:
+          type: array
+          items:
+            type: string
+            enum: [STOMP, CoAP, MQTT, WebSocket]
+        connections:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              status:
+                type: string
+                enum: [connected, disconnected, connecting]
+              endpoint:
+                type: string
+              lastActivity:
+                type: string
+                format: date-time
+
+paths:
+  # Health and Info endpoints
+  /health:
+    get:
+      tags: [System]
+      summary: Health check endpoint
+      description: Returns the health status of the API server
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  # USP Agent Management
+  /get/agents/:
+    get:
+      tags: [USP - Agents]
+      summary: List all USP agents
+      description: Retrieve a list of all registered USP agents
+      responses:
+        '200':
+          description: List of agents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Agent'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /get/mtpinfo/:
+    get:
+      tags: [USP - System]
+      summary: Get MTP information
+      description: Retrieve Message Transport Protocol information and status
+      responses:
+        '200':
+          description: MTP information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MtpInfo'
+
+  # USP Data Model Operations
+  /get/dm/{epId}/{path}:
+    get:
+      tags: [USP - Data Model]
+      summary: Get data model information
+      description: Retrieve data model information for a specific path
+      parameters:
+        - name: epId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: USP agent endpoint ID
+          example: "os::012345-000000000000"
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Data model object path
+          example: "Device.WiFi."
+      responses:
+        '200':
+          description: Data model information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DmObject'
+        '404':
+          description: Path not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /update/dm/{epId}/{path}:
+    get:
+      tags: [USP - Data Model]
+      summary: Update data model cache
+      description: Trigger update of data model cache for specified path
+      parameters:
+        - name: epId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: USP agent endpoint ID
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Data model path to update
+      responses:
+        '200':
+          description: Update initiated
+        '400':
+          description: Bad request
+
+  # USP Parameter Operations
+  /get/params/{epId}/{path}:
+    get:
+      tags: [USP - Parameters]
+      summary: Get parameter values
+      description: Retrieve parameter values from a USP agent
+      parameters:
+        - name: epId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: USP agent endpoint ID
+          example: "os::012345-000000000000"
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Parameter path or partial path
+          example: "Device.WiFi.Radio.1."
+      responses:
+        '200':
+          description: Parameter values
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  parameters:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Parameter'
+        '404':
+          description: Agent or parameter not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /set/params/{epId}/{path}:
+    post:
+      tags: [USP - Parameters]
+      summary: Set parameter values
+      description: Set parameter values on a USP agent
+      parameters:
+        - name: epId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: USP agent endpoint ID
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Parameter path
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ParameterSetRequest'
+      responses:
+        '200':
+          description: Parameters set successfully
+        '400':
+          description: Invalid request or parameter values
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /update/params/{epId}/{path}:
+    get:
+      tags: [USP - Parameters]
+      summary: Update parameter cache
+      description: Update parameter values from device cache
+      parameters:
+        - name: epId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: USP agent endpoint ID
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Parameter path to update
+      responses:
+        '200':
+          description: Update initiated
+
+  # USP Instance Operations
+  /get/instances/{epId}/{path}:
+    get:
+      tags: [USP - Instances]
+      summary: Get object instances
+      description: Retrieve object instances from a USP agent
+      parameters:
+        - name: epId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: USP agent endpoint ID
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Object instance path
+          example: "Device.WiFi.Radio."
+      responses:
+        '200':
+          description: Object instances
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  instances:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Instance'
+        '404':
+          description: Agent or path not found
+
+  /add/instances/{epId}/{path}:
+    post:
+      tags: [USP - Instances]
+      summary: Add object instances
+      description: Create new object instances on a USP agent
+      parameters:
+        - name: epId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: USP agent endpoint ID
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Object path for new instances
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InstanceRequest'
+      responses:
+        '200':
+          description: Instances created successfully
+        '400':
+          description: Invalid request
+
+  /update/instances/{epId}/{path}:
+    get:
+      tags: [USP - Instances]
+      summary: Update instance cache
+      description: Update object instance information from device
+      parameters:
+        - name: epId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: USP agent endpoint ID
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Instance path to update
+      responses:
+        '200':
+          description: Update initiated
+
+  /delete/instances/{epId}/{path}:
+    get:
+      tags: [USP - Instances]
+      summary: Delete object instances
+      description: Delete object instances from a USP agent
+      parameters:
+        - name: epId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: USP agent endpoint ID
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Instance path to delete
+      responses:
+        '200':
+          description: Instance deletion initiated
+        '404':
+          description: Instance not found
+
+  # USP Operations
+  /operate/cmd/{epId}/{path}:
+    post:
+      tags: [USP - Operations]
+      summary: Execute operation command
+      description: Execute an operation command on a USP agent
+      parameters:
+        - name: epId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: USP agent endpoint ID
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Operation path
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OperateRequest'
+      responses:
+        '200':
+          description: Operation executed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  operationId:
+                    type: string
+                  status:
+                    type: string
+        '400':
+          description: Invalid operation request
+
+  # TR-069 CWMP Device Management
+  /cwmp/devices/:
+    get:
+      tags: [TR-069 - Devices]
+      summary: List CWMP devices
+      description: Retrieve a list of all TR-069 CWMP devices
+      parameters:
+        - name: manufacturer
+          in: query
+          schema:
+            type: string
+          description: Filter by manufacturer
+        - name: product_class
+          in: query
+          schema:
+            type: string
+          description: Filter by product class
+        - name: online_only
+          in: query
+          schema:
+            type: boolean
+          description: Show only online devices
+          default: false
+      responses:
+        '200':
+          description: List of CWMP devices
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CwmpDevice'
+
+  /cwmp/device/{deviceId}:
+    get:
+      tags: [TR-069 - Devices]
+      summary: Get CWMP device details
+      description: Retrieve detailed information about a specific CWMP device
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: CWMP device identifier
+          example: "acs-device-001"
+      responses:
+        '200':
+          description: Device details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CwmpDevice'
+        '404':
+          description: Device not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /cwmp/device/{deviceId}/info:
+    get:
+      tags: [TR-069 - Devices]
+      summary: Get CWMP device information
+      description: Get comprehensive device information including parameters
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: CWMP device identifier
+      responses:
+        '200':
+          description: Device information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CwmpDevice'
+
+  # TR-069 Parameter Operations
+  /cwmp/device/{deviceId}/params:
+    get:
+      tags: [TR-069 - Parameters]
+      summary: Get CWMP device parameters
+      description: Retrieve parameter values from a CWMP device
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: CWMP device identifier
+        - name: parameters
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: true
+          description: List of parameter names to retrieve
+          example: ["Device.WiFi.Radio.1.Enable", "Device.DeviceInfo.SoftwareVersion"]
+      responses:
+        '200':
+          description: Parameter values
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  parameters:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CwmpParameter'
+
+    post:
+      tags: [TR-069 - Parameters]
+      summary: Set CWMP device parameters
+      description: Set parameter values on a CWMP device
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: CWMP device identifier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                parameters:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/CwmpParameter'
+                parameterKey:
+                  type: string
+                  description: Parameter key for tracking changes
+      responses:
+        '200':
+          description: Parameters set successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  parameterKey:
+                    type: string
+        '400':
+          description: Invalid parameter values
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # TR-069 Device Control
+  /cwmp/device/{deviceId}/reboot:
+    post:
+      tags: [TR-069 - Control]
+      summary: Reboot CWMP device
+      description: Initiate a reboot of the CWMP device
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: CWMP device identifier
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RebootRequest'
+      responses:
+        '200':
+          description: Reboot initiated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "reboot_initiated"
+                  commandKey:
+                    type: string
+
+  /cwmp/device/{deviceId}/factory-reset:
+    post:
+      tags: [TR-069 - Control]
+      summary: Factory reset CWMP device
+      description: Perform a factory reset of the CWMP device
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: CWMP device identifier
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                commandKey:
+                  type: string
+                  description: Command key for tracking
+      responses:
+        '200':
+          description: Factory reset initiated
+        '400':
+          description: Invalid request
+
+  /cwmp/device/{deviceId}/connection-request:
+    post:
+      tags: [TR-069 - Control]
+      summary: Send connection request
+      description: Send a connection request to the CWMP device
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: CWMP device identifier
+      responses:
+        '200':
+          description: Connection request sent
+        '404':
+          description: Device not found
+
+  # TR-069 File Transfer
+  /cwmp/device/{deviceId}/download:
+    post:
+      tags: [TR-069 - File Transfer]
+      summary: Download file to device
+      description: Initiate a file download to the CWMP device
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: CWMP device identifier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FileTransferRequest'
+      responses:
+        '200':
+          description: Download initiated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transferId:
+                    type: string
+                  status:
+                    type: string
+                    example: "initiated"
+        '400':
+          description: Invalid file transfer request
+
+  /cwmp/device/{deviceId}/upload:
+    post:
+      tags: [TR-069 - File Transfer]
+      summary: Upload file from device
+      description: Initiate a file upload from the CWMP device
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: CWMP device identifier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FileTransferRequest'
+      responses:
+        '200':
+          description: Upload initiated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transferId:
+                    type: string
+                  status:
+                    type: string
+        '400':
+          description: Invalid upload request
+
+  # Administrative Operations
+  /reconnect/mtp/:
+    get:
+      tags: [Administration]
+      summary: Reconnect MTP services
+      description: Trigger reconnection of Message Transport Protocol services
+      responses:
+        '200':
+          description: Reconnection initiated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "reconnection_initiated"
+
+  /reconnect/db/:
+    get:
+      tags: [Administration]
+      summary: Reconnect database
+      description: Trigger database reconnection
+      responses:
+        '200':
+          description: Database reconnection initiated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "db_reconnection_initiated"
+
+  /delete/dbcoll/{coll}:
+    get:
+      tags: [Administration]
+      summary: Delete database collection
+      description: Delete a specific database collection (use with caution)
+      parameters:
+        - name: coll
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Collection name to delete
+          example: "params"
+      responses:
+        '200':
+          description: Collection deletion initiated
+        '400':
+          description: Invalid collection name
+        '403':
+          description: Operation not allowed
+
+tags:
+  - name: System
+    description: System health and status endpoints
+  - name: USP - Agents
+    description: USP agent management operations
+  - name: USP - Data Model
+    description: USP data model operations
+  - name: USP - Parameters
+    description: USP parameter management
+  - name: USP - Instances
+    description: USP object instance operations
+  - name: USP - Operations
+    description: USP command execution
+  - name: USP - System
+    description: USP system information
+  - name: TR-069 - Devices
+    description: TR-069 CWMP device management
+  - name: TR-069 - Parameters
+    description: TR-069 parameter operations
+  - name: TR-069 - Control
+    description: TR-069 device control operations
+  - name: TR-069 - File Transfer
+    description: TR-069 file transfer operations
+  - name: Administration
+    description: Administrative functions

@@ -153,7 +153,17 @@ openusp-cache           redis:latest                       Up 2 minutes
 openusp-controller      n4networks/openusp-controller      Up 2 minutes
 openusp-cwmpacs         n4networks/openusp-cwmpacs         Up 2 minutes
 openusp-db              mongo:latest                       Up 2 minutes (healthy)
+openusp-swagger         swaggerapi/swagger-ui              Up 2 minutes
 ```
+
+### Access Points
+
+After starting the services, you can access:
+
+- **API Server**: http://localhost:8081 - Main REST API
+- **Swagger UI**: http://localhost:8080 - Interactive API documentation
+- **ActiveMQ Console**: http://localhost:8161 - Message broker management
+- **CLI**: `./scripts/docker/cli.sh` - Command line interface
 
 ## 📦 Installation
 
@@ -329,34 +339,65 @@ curl -X POST http://localhost:8081/api/v1/cwmp/devices/acs-device-001/reboot \
 
 ## 📚 API Reference
 
-### USP API Endpoints
+OpenUSP provides comprehensive REST APIs for device management with complete OpenAPI 3.0.3 documentation.
+
+### 🔗 Interactive Documentation
+
+- **Swagger UI**: http://localhost:8080 - Interactive API explorer and testing interface
+- **OpenAPI Spec**: [api/openusp.yaml](api/openusp.yaml) - Complete API specification
+- **API Documentation**: [api/README.md](api/README.md) - Detailed API reference
+
+### 🔐 Authentication
+
+All API endpoints use HTTP Basic Authentication:
+- **Default Username**: `admin`
+- **Default Password**: `admin`
+
+### 🚀 Quick API Examples
+
+```bash
+# Health check
+curl -u admin:admin http://localhost:8081/health
+
+# List USP agents
+curl -u admin:admin http://localhost:8081/get/agents/
+
+# Get device parameters (USP)
+curl -u admin:admin http://localhost:8081/get/params/os::012345-000000000000/Device.WiFi.
+
+# List CWMP devices
+curl -u admin:admin http://localhost:8081/cwmp/devices/
+
+# Get CWMP device parameters
+curl -u admin:admin "http://localhost:8081/cwmp/device/acs-device-001/params?parameters=Device.DeviceInfo.SoftwareVersion"
+```
+
+### 📋 Key USP API Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/v1/agents` | List all USP agents |
-| GET | `/api/v1/agents/{id}` | Get agent details |
-| POST | `/api/v1/agents/{id}/get` | Get parameter values |
-| POST | `/api/v1/agents/{id}/set` | Set parameter values |
-| POST | `/api/v1/agents/{id}/add` | Add objects |
-| POST | `/api/v1/agents/{id}/delete` | Delete objects |
-| POST | `/api/v1/agents/{id}/operate` | Execute operations |
-| GET | `/api/v1/agents/{id}/subscriptions` | List subscriptions |
-| POST | `/api/v1/agents/{id}/subscribe` | Create subscription |
+| GET | `/get/agents/` | List all USP agents |
+| GET | `/get/params/{epId}/{path}` | Get parameter values |
+| POST | `/set/params/{epId}/{path}` | Set parameter values |
+| GET | `/get/instances/{epId}/{path}` | Get object instances |
+| POST | `/add/instances/{epId}/{path}` | Add object instances |
+| POST | `/operate/cmd/{epId}/{path}` | Execute operations |
+| GET | `/get/dm/{epId}/{path}` | Get data model info |
 
-### TR-069 CWMP API Endpoints
+### 📋 Key TR-069 CWMP API Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/v1/cwmp/devices` | List all CWMP devices |
-| GET | `/api/v1/cwmp/devices/{id}` | Get device details |
-| POST | `/api/v1/cwmp/devices/{id}/params/get` | Get parameter values |
-| POST | `/api/v1/cwmp/devices/{id}/params/set` | Set parameter values |
-| POST | `/api/v1/cwmp/devices/{id}/files/download` | Download file to device |
-| POST | `/api/v1/cwmp/devices/{id}/files/upload` | Upload file from device |
-| POST | `/api/v1/cwmp/devices/{id}/reboot` | Reboot device |
-| POST | `/api/v1/cwmp/devices/{id}/factory-reset` | Factory reset device |
-| GET | `/api/v1/cwmp/devices/{id}/sessions` | Get active sessions |
-| GET | `/api/v1/cwmp/stats` | Get ACS statistics |
+| GET | `/cwmp/devices/` | List all CWMP devices |
+| GET | `/cwmp/device/{deviceId}` | Get device details |
+| GET | `/cwmp/device/{deviceId}/params` | Get parameter values |
+| POST | `/cwmp/device/{deviceId}/params` | Set parameter values |
+| POST | `/cwmp/device/{deviceId}/download` | Download file to device |
+| POST | `/cwmp/device/{deviceId}/upload` | Upload file from device |
+| POST | `/cwmp/device/{deviceId}/reboot` | Reboot device |
+| POST | `/cwmp/device/{deviceId}/factory-reset` | Factory reset device |
+
+> 💡 **Tip**: Use the Swagger UI at http://localhost:8080 for interactive API testing with authentication, request validation, and response examples.
 
 ## ⚙️ Configuration
 
