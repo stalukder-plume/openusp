@@ -8,7 +8,7 @@
 # Project metadata
 PROJECT_NAME    := openusp
 MODULE_NAME     := github.com/n4-networks/openusp
-ORGANIZATION    := n4networks
+ORGANIZATION    := stalukder-plume
 
 # Version information
 VERSION         ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
@@ -77,6 +77,10 @@ PLATFORMS       := linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd
 
 # Docker platforms
 DOCKER_PLATFORMS := linux/amd64,linux/arm64
+
+# Docker registry (change this to your registry)
+DOCKER_REGISTRY  ?= stalukder-plume
+DOCKER_REPO_PREFIX := $(DOCKER_REGISTRY)/$(PROJECT_NAME)
 
 # ================================================================================================
 # TOOLS & EXTERNAL DEPENDENCIES
@@ -291,12 +295,18 @@ security-check: ## Run security vulnerability check
 # DOCKER TARGETS
 # ================================================================================================
 
-docker-build: ## Build all Docker images
-	@echo "==> Building Docker images..."
-	@$(DOCKER) build -t $(CONTROLLER_IMAGE):$(VERSION) -f $(DOCKER_DIR)/controller/Dockerfile .
-	@$(DOCKER) build -t $(APISERVER_IMAGE):$(VERSION) -f $(DOCKER_DIR)/apiserver/Dockerfile .
-	@$(DOCKER) build -t $(CLI_IMAGE):$(VERSION) -f $(DOCKER_DIR)/cli/Dockerfile .
-	@$(DOCKER) build --target=cwmpacs -t $(CWMPACS_IMAGE):$(VERSION) -f $(DOCKER_DIR)/controller/Dockerfile .
+docker-build: ## Build all Docker images (with semantic versioning support)
+	@echo "==> Building Docker images for version $(VERSION)"
+	@if [ -f scripts/docker-release.sh ]; then \
+		echo "    Using semantic versioning script..."; \
+		./scripts/docker-release.sh $(VERSION); \
+	else \
+		echo "    Using legacy build method..."; \
+		$(DOCKER) build -t $(CONTROLLER_IMAGE):$(VERSION) -f $(DOCKER_DIR)/controller/Dockerfile .; \
+		$(DOCKER) build -t $(APISERVER_IMAGE):$(VERSION) -f $(DOCKER_DIR)/apiserver/Dockerfile .; \
+		$(DOCKER) build -t $(CLI_IMAGE):$(VERSION) -f $(DOCKER_DIR)/cli/Dockerfile .; \
+		$(DOCKER) build --target=cwmpacs -t $(CWMPACS_IMAGE):$(VERSION) -f $(DOCKER_DIR)/controller/Dockerfile .; \
+	fi
 
 docker-build-multiarch: ## Build multi-architecture Docker images
 	@echo "==> Building multi-architecture Docker images..."
@@ -309,11 +319,19 @@ docker-build-multiarch: ## Build multi-architecture Docker images
 	@$(DOCKER) buildx build --platform $(DOCKER_PLATFORMS) --target=cwmpacs \
 		-t $(CWMPACS_IMAGE):$(VERSION) -f $(DOCKER_DIR)/controller/Dockerfile --push .
 
-docker-push: ## Push Docker images to registry
-	@echo "==> Pushing Docker images..."
-	@$(DOCKER) push $(CONTROLLER_IMAGE):$(VERSION)
-	@$(DOCKER) push $(APISERVER_IMAGE):$(VERSION)
-	@$(DOCKER) push $(CLI_IMAGE):$(VERSION)
+docker-push: ## Build and push Docker images to registry (with semantic versioning)
+	@echo "==> Building and pushing Docker images for version $(VERSION)"
+	@if [ -f scripts/docker-release.sh ]; then \
+		echo "    Using semantic versioning script..."; \
+		./scripts/docker-release.sh $(VERSION) --push; \
+	else \
+		echo "    Using legacy push method..."; \
+		$(MAKE) docker-build; \
+		$(DOCKER) push $(CONTROLLER_IMAGE):$(VERSION); \
+		$(DOCKER) push $(APISERVER_IMAGE):$(VERSION); \
+		$(DOCKER) push $(CLI_IMAGE):$(VERSION); \
+		$(DOCKER) push $(CWMPACS_IMAGE):$(VERSION); \
+	fi
 	@$(DOCKER) push $(CWMPACS_IMAGE):$(VERSION)
 
 docker-run: ## Run Docker containers locally
@@ -467,4 +485,99 @@ apiserver: build-apiserver   ## Legacy: Build apiserver (use build-apiserver)
 cli: build-cli               ## Legacy: Build CLI (use build-cli)
 cwmpacs: build-cwmpacs       ## Legacy: Build CWMP ACS (use build-cwmpacs)
 images: docker-build         ## Legacy: Build images (use docker-build)
+
+# ================================================================================================
+# DOCKER RELEASE TARGETS
+# ================================================================================================
+
+.PHONY: docker-build docker-push docker-release version-check version-suggest
+
+## Interactive Docker release process
+docker-release: version-suggest ## Interactive Docker release with version selection
+	@echo "==> Starting interactive Docker release process"
+	@./scripts/docker-release.sh --push
+
+## Build single Docker component (use COMPONENT=name)
+docker-build-single: ## Build single Docker component (COMPONENT=controller|apiserver|cli|cwmpacs)
+ifndef COMPONENT
+	@echo "Error: Please specify COMPONENT (e.g., make docker-build-single COMPONENT=controller)"
+	@exit 1
+endif
+	@echo "==> Building $(COMPONENT) Docker image for version $(VERSION)"
+	@./scripts/docker-release.sh $(VERSION) --component=$(COMPONENT)
+
+## Push single Docker component
+docker-push-single: ## Build and push single Docker component  
+ifndef COMPONENT
+	@echo "Error: Please specify COMPONENT (e.g., make docker-push-single COMPONENT=controller)"
+	@exit 1
+endif
+	@echo "==> Building and pushing $(COMPONENT) Docker image for version $(VERSION)"
+	@./scripts/docker-release.sh $(VERSION) --component=$(COMPONENT) --push
+
+## Check current version and git status
+version-check: ## Show current version information
+	@echo "==> Version Information"
+	@echo "Current version: $(VERSION)"
+	@echo "Git commit:     $(COMMIT)"
+	@echo "Git branch:     $(BRANCH)"
+	@echo "Build time:     $(BUILD_TIME)"
+	@echo ""
+	@echo "Git status:"
+	@git status --porcelain || echo "No git repository"
+
+## Suggest next semantic version
+version-suggest: ## Suggest next semantic version based on git history
+	@./scripts/version-helper.sh
+
+## List all version tags
+version-list: ## List all semantic version tags
+	@./scripts/version-helper.sh --list
+
+## Create and tag a new release version
+tag-release: ## Create and push a new semantic version tag (VERSION=vX.Y.Z)
+ifndef VERSION
+	@echo "Error: Please specify VERSION (e.g., make tag-release VERSION=v1.2.3)"
+	@exit 1
+endif
+	@echo "==> Creating release tag $(VERSION)"
+	@if git tag | grep -q "^$(VERSION)$$"; then \
+		echo "Error: Tag $(VERSION) already exists"; \
+		exit 1; \
+	fi
+	@git tag -a $(VERSION) -m "Release $(VERSION)"
+	@git push origin $(VERSION)
+	@echo "✅ Release tag $(VERSION) created and pushed"
+
+## Full release workflow: tag + build + push
+release: ## Check GitHub Actions workflow status
+ci-status: ## Check GitHub Actions workflow status and recent runs
+	@./scripts/check-workflows.sh
+
+## List GitHub Actions workflows
+ci-list: ## List all available GitHub Actions workflows
+	@echo "==> Available GitHub Actions workflows:"
+	@find .github/workflows -name "*.yml" -o -name "*.yaml" | while read -r file; do \
+		workflow_name=$$(grep -m1 "^name:" "$$file" | sed 's/name: *//' | tr -d '"'"'"''); \
+		echo "  📄 $$file - $$workflow_name"; \
+	done
+
+## Complete release workflow: tag + build + push
+release: ## Complete release workflow (VERSION=vX.Y.Z) - tags, builds, and pushes
+ifndef VERSION
+	@echo "Error: Please specify VERSION (e.g., make release VERSION=v1.2.3)"
+	@./scripts/version-helper.sh
+	@exit 1
+endif
+	@echo "==> Starting full release workflow for $(VERSION)"
+	@$(MAKE) tag-release VERSION=$(VERSION)
+	@$(MAKE) docker-push VERSION=$(VERSION)
+	@echo ""
+	@echo "🚀 Release $(VERSION) completed successfully!"
+	@echo ""
+	@echo "Images published:"
+	@echo "  - $(DOCKER_REPO_PREFIX)-controller:$(VERSION)"
+	@echo "  - $(DOCKER_REPO_PREFIX)-apiserver:$(VERSION)"  
+	@echo "  - $(DOCKER_REPO_PREFIX)-cli:$(VERSION)"
+	@echo "  - $(DOCKER_REPO_PREFIX)-cwmpacs:$(VERSION)"
 

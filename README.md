@@ -2,10 +2,13 @@
 
 <div align="center">
 
-[![CI Build](https://github.com/n4-networks/openusp/actions/workflows/build.yml/badge.svg)](https://github.com/n4-networks/openusp/actions/workflows/build.yml)
+[![CI/CD Pipeline](https://github.com/stalukder-plume/openusp/actions/workflows/ci.yml/badge.svg)](https://github.com/stalukder-plume/openusp/actions/workflows/ci.yml)
+[![Security Scan](https://github.com/stalukder-plume/openusp/actions/workflows/security.yml/badge.svg)](https://github.com/stalukder-plume/openusp/actions/workflows/security.yml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Go Version](https://img.shields.io/badge/go-1.21+-blue.svg)](https://golang.org)
 [![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](https://docker.com)
+[![Release](https://img.shields.io/github/v/release/stalukder-plume/openusp?include_prereleases)](https://github.com/stalukder-plume/openusp/releases)
+[![Docker Pulls](https://img.shields.io/docker/pulls/stalukder-plume/openusp-controller)](https://hub.docker.com/r/stalukder-plume/openusp-controller)
 [![USP TR-369](https://img.shields.io/badge/USP-TR--369-green.svg)](https://usp.technology)
 [![TR-069](https://img.shields.io/badge/CWMP-TR--069-orange.svg)](https://www.broadband-forum.org)
 
