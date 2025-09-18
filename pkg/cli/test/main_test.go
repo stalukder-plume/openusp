@@ -23,9 +23,7 @@ import (
 	"github.com/n4-networks/openusp/pkg/cli"
 )
 
-var (
-	cliH *cli.Cli
-)
+var cliH *cli.Cli
 
 func TestMain(m *testing.M) {
 	log.Println("Inside of TestMain")

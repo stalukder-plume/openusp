@@ -13,15 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 # Build the application from source
 FROM --platform=$BUILDPLATFORM golang:1.21 AS build-stage
 
 ARG TARGETOS TARGETARCH
-ENV GOOS $TARGETOS
-
-# Pass TARGETART as GOARCH env flag for go cross compilation
-ENV GOARCH $TARGETARCH
+ENV GOOS=${TARGETOS}
+ENV GOARCH=${TARGETARCH}
 
 # Set destination for COPY
 WORKDIR /app
@@ -34,22 +31,37 @@ COPY pkg ./pkg
 COPY cmd ./cmd
 COPY Makefile ./
 
-RUN make apiserver
-
-# Run the tests in the container
-#FROM build-stage AS run-test-stage
-#RUN go test -v ./...
+# Build with explicit cross-compilation settings
+RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} CGO_ENABLED=0 go build -ldflags="-s -w" -o cmd/apiserver/apiserver ./cmd/apiserver
 
 # Deploy the application binary into a lean image
-#FROM gcr.io/distroless/base-debian11 AS build-release-stage
 FROM debian:stable AS build-release-stage
 
-WORKDIR /
+# Create non-root user
+RUN groupadd -r openusp && useradd --no-log-init -r -g openusp openusp
 
-COPY --from=build-stage /app/cmd/apiserver/apiserver /apiserver
+# Create application directories following FHS conventions
+RUN mkdir -p /opt/openusp/bin \
+    /opt/openusp/configs \
+    /opt/openusp/scripts \
+    /var/lib/openusp \
+    /var/log/openusp && \
+    chown -R openusp:openusp /opt/openusp /var/lib/openusp /var/log/openusp
 
-#EXPOSE 8080
+WORKDIR /opt/openusp
 
-#USER nonroot:nonroot
+# Copy the binary and scripts to standard location
+COPY --from=build-stage /app/cmd/apiserver/apiserver /opt/openusp/bin/apiserver
+COPY --chown=openusp:openusp build/common/entrypoint-common.sh /opt/openusp/scripts/entrypoint-common.sh
+COPY --chown=openusp:openusp build/apiserver/entrypoint.sh /opt/openusp/scripts/entrypoint.sh
 
-ENTRYPOINT ["/apiserver"]
+# Make scripts executable
+RUN chmod +x /opt/openusp/scripts/*.sh
+
+# Switch to non-root user
+USER openusp
+
+EXPOSE 8081
+
+ENTRYPOINT ["/opt/openusp/scripts/entrypoint.sh"]
+CMD []

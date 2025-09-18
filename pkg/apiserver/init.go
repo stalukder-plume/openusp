@@ -52,8 +52,9 @@ func (g *grpcHandle) incTxMsgCnt() uint64 {
 }
 
 type dbHandle struct {
-	client  *mongo.Client
-	uspIntf *db.UspDb
+	client   *mongo.Client
+	uspIntf  *db.UspDb
+	cwmpIntf *db.CwmpDb
 }
 
 type ApiServer struct {

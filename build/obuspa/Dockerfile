@@ -1,73 +1,91 @@
+# syntax=docker/dockerfile:1
+# Copyright 2023 N4-Networks.com
 #
-# file Dockerfile
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-# Base docker image with all required dependencies for OB-USP-A
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# Based on Ubuntu 22.10 (Kinetic Kudu), which provides libmosquitto 2.0.11 and libwebsockets 4.1.6
-# This image includes some basic compilation tools (automake, autoconf)
-#
-# One-liner execution line (straightforward build for OB-USP-A execution):
-# > docker build -f Dockerfile -t obuspa:latest .
-#
-# Multi-stage builds execution lines (to tag build stages):
-# 1) Create the build environment image:
-# > docker build -f Dockerfile -t obuspa:build-env --target build-env .
-# 2) Create the OB-USP-A image, then build the application
-# > docker build -f Dockerfile -t obuspa:latest --target runner .
-#
-#FROM --platform=$BUILDPLATFORM ubuntu AS build-env
-FROM ubuntu AS build-env
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-# Install dependencies
-RUN apt update && apt -y install \
+# Base image with dependencies
+FROM debian:stable AS base
+
+# Install dependencies required for building and running obuspa
+RUN apt-get update && \
+    apt-get install -y \
         build-essential \
-        libssl-dev \
-        libcurl4-openssl-dev\
-        libsqlite3-dev \
-        libz-dev \
-        autoconf \
-        automake \
-        libtool \
-        libmosquitto-dev \
-        pkg-config \
-        git \
         cmake \
-        make \
-    && apt clean
+        git \
+        libcurl4-openssl-dev \
+        libmosquitto-dev \
+        libprotobuf-c-dev \
+        libssl-dev \
+        libsqlite3-dev \
+        libwebsockets-dev \
+        protobuf-c-compiler \
+        zlib1g-dev && \
+    rm -rf /var/lib/apt/lists/*
 
-RUN mkdir -p /usr/local/src
-WORKDIR /usr/local/src/
-RUN git clone https://github.com/warmcat/libwebsockets.git libwebsockets
-WORKDIR /usr/local/src/libwebsockets
-RUN cmake -B build -S .
-RUN cd build && make && make install
-# install libs in /usr/local/lib ; configured in /etc/ld.so.conf.d/libc.conf
-# ENV LD_LIBRARY_PATH /usr/local/lib:${LD_LIBRARY_PATH}
-RUN ldconfig -v
+# Build stage for obuspa
+FROM base AS build-stage
 
-ENV MAKE_JOBS=8
+WORKDIR /app
 
-COPY ./obuspa /obuspa/
-RUN cd /obuspa/ && \
-    autoreconf -fi && \
-    ./configure && \
-    make -j${MAKE_JOBS} && \
-    make install
+# Copy the obuspa source code
+COPY obuspa ./obuspa
 
-FROM debian:stable AS build-release-stage
-RUN apt update && apt -y install \
-    libssl-dev \
-    libsqlite3-dev \
-    libcurl4-openssl-dev\
-    libmosquitto-dev
+# Build obuspa
+WORKDIR /app/obuspa
+RUN make
 
-WORKDIR /
-COPY --from=build-env /usr/local/lib/libwebsockets.* /usr/local/lib
-COPY --from=build-env /obuspa/obuspa /bin
-COPY ./configs/obuspa/factory_reset_example.txt /etc
-RUN ldconfig -v
+# Runtime stage
+FROM debian:stable AS runtime
 
-ENV OBUSPA_ARGS="-p -v 4 -r /etc/factory_reset_example.txt --dbfile /tmp/sqldb"
+# Install runtime dependencies
+RUN apt-get update && \
+    apt-get install -y \
+        libcurl4 \
+        libmosquitto1 \
+        libprotobuf-c1 \
+        libssl3 \
+        libsqlite3-0 \
+        libwebsockets19 \
+        zlib1g && \
+    rm -rf /var/lib/apt/lists/*
 
-# Run obuspa with args expanded
-CMD obuspa ${OBUSPA_ARGS}
+# Create non-root user
+RUN groupadd -r obuspa && useradd --no-log-init -r -g obuspa obuspa
+
+# Create application directories following FHS conventions
+RUN mkdir -p /opt/obuspa/bin \
+    /opt/obuspa/configs \
+    /opt/obuspa/scripts \
+    /var/lib/obuspa \
+    /var/log/obuspa && \
+    chown -R obuspa:obuspa /opt/obuspa /var/lib/obuspa /var/log/obuspa
+
+# Copy the obuspa binary and scripts
+COPY --from=build-stage /app/obuspa/obuspa /opt/obuspa/bin/obuspa
+COPY --chown=obuspa:obuspa build/common/entrypoint-common.sh /opt/obuspa/scripts/entrypoint-common.sh
+COPY --chown=obuspa:obuspa build/obuspa/entrypoint.sh /opt/obuspa/scripts/entrypoint.sh
+
+# Make scripts executable
+RUN chmod +x /opt/obuspa/scripts/*.sh
+
+WORKDIR /opt/obuspa
+
+# Switch to non-root user
+USER obuspa
+
+# Expose default ports (can be overridden)
+EXPOSE 8080 8443
+
+# Default entrypoint
+ENTRYPOINT ["/opt/obuspa/scripts/entrypoint.sh"]
+CMD []

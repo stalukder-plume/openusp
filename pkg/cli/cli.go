@@ -213,3 +213,15 @@ func (cli *Cli) SetOut(writer io.Writer) error {
 	cli.sh.shell.SetOut(writer)
 	return nil
 }
+
+// IsConnectedToDb checks if CLI has a valid REST connection to the API server
+func (cli *Cli) IsConnectedToDb() bool {
+	// Check if the REST client is configured and can reach the API server
+	return cli.rest.client != nil && cli.cfg.apiServerAddr != ""
+}
+
+// IsConnectedToMtp checks if CLI has a valid MTP (STOMP) connection
+func (cli *Cli) IsConnectedToMtp() bool {
+	// Check if STOMP client is connected
+	return cli.stomp.client != nil
+}

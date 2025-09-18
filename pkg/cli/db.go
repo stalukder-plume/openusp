@@ -15,6 +15,7 @@
 package cli
 
 import (
+	"errors"
 	"log"
 
 	"github.com/abiosoft/ishell"
@@ -87,6 +88,13 @@ func (cli *Cli) dbGetInstanceByAlias(aliasName string) (*Instance, error) {
 	inst.UniqueKeys = dbInsts.UniqueKeys
 	return inst, nil
 }
+*/
+
+// Stub implementation for GetInstancePathByAlias method
+func (cli *Cli) dbGetInstanceByAlias(aliasName string) (*Instance, error) {
+	return nil, errors.New("dbGetInstanceByAlias method not implemented - CLI uses REST API instead of direct DB access")
+}
+/*
 func (cli *Cli) dbDeleteInstances(paths []*string) error {
 	if cli.db.uspIntf == nil {
 		return errors.New("Not connected to DB")

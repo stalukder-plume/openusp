@@ -104,8 +104,7 @@ func Connect() (*mongo.Client, error) {
 	return client, err
 }
 
-/*
-func Connect(addr string, user string, passwd string, timeout time.Duration) (*mongo.Client, error) {
+func ConnectWithParams(addr string, user string, passwd string, timeout time.Duration) (*mongo.Client, error) {
 	cred := options.Credential{Username: user, Password: passwd}
 	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://" + addr).SetAuth(cred))
 	if err != nil {
@@ -118,7 +117,6 @@ func Connect(addr string, user string, passwd string, timeout time.Duration) (*m
 	err = client.Ping(ctx, nil)
 	return client, err
 }
-*/
 
 func ConnectCache(addr string, timeout time.Duration) (*redis.Client, error) {
 	client := redis.NewClient(&redis.Options{

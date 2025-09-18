@@ -701,56 +701,70 @@ paths:
     get:
       tags: [TR-069 - Devices]
       summary: List CWMP devices
-      description: Retrieve a list of all TR-069 CWMP devices
+      description: Retrieve a list of all TR-069 CWMP devices from the database
       parameters:
         - name: manufacturer
           in: query
           schema:
             type: string
-          description: Filter by manufacturer
+          description: Filter by manufacturer (case-insensitive partial match)
+          example: "Broadcom"
         - name: product_class
           in: query
           schema:
             type: string
-          description: Filter by product class
+          description: Filter by product class (case-insensitive partial match)
+          example: "RG"
         - name: online_only
           in: query
           schema:
             type: boolean
-          description: Show only online devices
+          description: Show only online devices (devices with inform within 5 minutes)
           default: false
       responses:
         '200':
-          description: List of CWMP devices
+          description: List of CWMP devices retrieved from database
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/CwmpDevice'
+        '500':
+          description: Database connection error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /cwmp/device/{deviceId}:
     get:
       tags: [TR-069 - Devices]
-      summary: Get CWMP device details
-      description: Retrieve detailed information about a specific CWMP device
+      summary: Get device by serial number
+      description: Retrieve a specific TR-069 CWMP device by its serial number from the database
       parameters:
         - name: deviceId
           in: path
           required: true
           schema:
             type: string
-          description: CWMP device identifier
-          example: "acs-device-001"
+          description: Device serial number or ID
+          example: "DM001234567890"
       responses:
         '200':
-          description: Device details
+          description: CWMP device retrieved from database
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/CwmpDevice'
         '404':
-          description: Device not found
+          description: Device not found in database
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Database connection error
           content:
             application/json:
               schema:
@@ -760,58 +774,76 @@ paths:
     get:
       tags: [TR-069 - Devices]
       summary: Get CWMP device information
-      description: Get comprehensive device information including parameters
+      description: Get comprehensive device information from the database including parameters
       parameters:
         - name: deviceId
           in: path
           required: true
           schema:
             type: string
-          description: CWMP device identifier
+          description: CWMP device identifier (serial number)
+          example: "DM001234567890"
       responses:
         '200':
-          description: Device information
+          description: Device information retrieved from database
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/CwmpDevice'
+        '404':
+          description: Device not found in database
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Database connection error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   # TR-069 Parameter Operations
   /cwmp/device/{deviceId}/params:
     get:
       tags: [TR-069 - Parameters]
-      summary: Get CWMP device parameters
-      description: Retrieve parameter values from a CWMP device
+      summary: Get device parameters
+      description: Retrieve all parameter values for a specific TR-069 CWMP device from the database
       parameters:
         - name: deviceId
           in: path
           required: true
           schema:
             type: string
-          description: CWMP device identifier
-        - name: parameters
+          description: CWMP device identifier (serial number)
+          example: "DM001234567890"
+        - name: path_filter
           in: query
           schema:
-            type: array
-            items:
-              type: string
-          style: form
-          explode: true
-          description: List of parameter names to retrieve
-          example: ["Device.WiFi.Radio.1.Enable", "Device.DeviceInfo.SoftwareVersion"]
+            type: string
+          description: Filter parameters by path prefix (case-insensitive partial match)
+          example: "Device.WiFi"
       responses:
         '200':
-          description: Parameter values
+          description: Device parameters retrieved from database
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  parameters:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/CwmpParameter'
-
+                type: array
+                items:
+                  $ref: '#/components/schemas/CwmpParameter'
+        '404':
+          description: Device not found in database
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Database connection error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
     post:
       tags: [TR-069 - Parameters]
       summary: Set CWMP device parameters
@@ -1001,6 +1033,29 @@ paths:
                     type: string
         '400':
           description: Invalid upload request
+
+  /cwmp/sample-data:
+    post:
+      tags: [TR-069 - Testing]
+      summary: Populate sample CWMP data
+      description: Populate the database with sample CWMP device and parameter data for testing purposes
+      responses:
+        '200':
+          description: Sample data created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Sample CWMP data created successfully"
+        '500':
+          description: Database operation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   # Administrative Operations
   /reconnect/mtp/:

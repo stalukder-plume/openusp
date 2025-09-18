@@ -273,3 +273,161 @@ func (c *CwmpDb) GetCwmpParameterCollection() *mongo.Collection {
 func (c *CwmpDb) GetCwmpFileTransferCollection() *mongo.Collection {
 	return c.cwmpFileColl
 }
+
+// GetAllCwmpDevices retrieves all CWMP devices from the database
+func (c *CwmpDb) GetAllCwmpDevices() ([]CwmpDevice, error) {
+	if c.cwmpDeviceColl == nil {
+		return nil, errors.New("CWMP device collection not initialized")
+	}
+
+	ctx := context.Background()
+	cursor, err := c.cwmpDeviceColl.Find(ctx, bson.M{})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var devices []CwmpDevice
+	if err = cursor.All(ctx, &devices); err != nil {
+		return nil, err
+	}
+
+	return devices, nil
+}
+
+// GetCwmpDeviceByID retrieves a specific CWMP device by ID
+func (c *CwmpDb) GetCwmpDeviceByID(deviceID string) (*CwmpDevice, error) {
+	if c.cwmpDeviceColl == nil {
+		return nil, errors.New("CWMP device collection not initialized")
+	}
+
+	ctx := context.Background()
+	var device CwmpDevice
+	err := c.cwmpDeviceColl.FindOne(ctx, bson.M{"_id": deviceID}).Decode(&device)
+	if err != nil {
+		return nil, err
+	}
+
+	return &device, nil
+}
+
+// GetCwmpDevicesByFilter retrieves CWMP devices based on filter criteria
+func (c *CwmpDb) GetCwmpDevicesByFilter(filter bson.M) ([]CwmpDevice, error) {
+	if c.cwmpDeviceColl == nil {
+		return nil, errors.New("CWMP device collection not initialized")
+	}
+
+	ctx := context.Background()
+	cursor, err := c.cwmpDeviceColl.Find(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var devices []CwmpDevice
+	if err = cursor.All(ctx, &devices); err != nil {
+		return nil, err
+	}
+
+	return devices, nil
+}
+
+// GetCwmpParametersByDeviceID retrieves parameters for a specific CWMP device
+func (c *CwmpDb) GetCwmpParametersByDeviceID(deviceID string) ([]CwmpParameter, error) {
+	if c.cwmpParamColl == nil {
+		return nil, errors.New("CWMP parameter collection not initialized")
+	}
+
+	ctx := context.Background()
+	cursor, err := c.cwmpParamColl.Find(ctx, bson.M{"device_id": deviceID})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var parameters []CwmpParameter
+	if err = cursor.All(ctx, &parameters); err != nil {
+		return nil, err
+	}
+
+	return parameters, nil
+}
+
+// GetCwmpParametersByPath retrieves specific parameters by path for a device
+func (c *CwmpDb) GetCwmpParametersByPath(deviceID string, paths []string) ([]CwmpParameter, error) {
+	if c.cwmpParamColl == nil {
+		return nil, errors.New("CWMP parameter collection not initialized")
+	}
+
+	ctx := context.Background()
+	filter := bson.M{
+		"device_id": deviceID,
+		"path":      bson.M{"$in": paths},
+	}
+
+	cursor, err := c.cwmpParamColl.Find(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var parameters []CwmpParameter
+	if err = cursor.All(ctx, &parameters); err != nil {
+		return nil, err
+	}
+
+	return parameters, nil
+}
+
+// UpsertCwmpDevice inserts or updates a CWMP device
+func (c *CwmpDb) UpsertCwmpDevice(device *CwmpDevice) error {
+	if c.cwmpDeviceColl == nil {
+		return errors.New("CWMP device collection not initialized")
+	}
+
+	ctx := context.Background()
+	device.UpdatedAt = time.Now()
+	
+	opts := options.Replace().SetUpsert(true)
+	_, err := c.cwmpDeviceColl.ReplaceOne(ctx, bson.M{"_id": device.ID}, device, opts)
+	
+	return err
+}
+
+// UpsertCwmpParameters inserts or updates CWMP parameters
+func (c *CwmpDb) UpsertCwmpParameters(parameters []CwmpParameter) error {
+	if c.cwmpParamColl == nil {
+		return errors.New("CWMP parameter collection not initialized")
+	}
+
+	if len(parameters) == 0 {
+		return nil
+	}
+
+	ctx := context.Background()
+	var operations []mongo.WriteModel
+
+	for _, param := range parameters {
+		param.LastUpdate = time.Now()
+		
+		filter := bson.M{
+			"device_id": param.DeviceID,
+			"path":      param.Path,
+		}
+		
+		replacement := bson.M{
+			"device_id":   param.DeviceID,
+			"path":        param.Path,
+			"value":       param.Value,
+			"type":        param.Type,
+			"writable":    param.Writable,
+			"last_update": param.LastUpdate,
+		}
+		
+		operation := mongo.NewReplaceOneModel().SetFilter(filter).SetReplacement(replacement).SetUpsert(true)
+		operations = append(operations, operation)
+	}
+
+	_, err := c.cwmpParamColl.BulkWrite(ctx, operations)
+	return err
+}

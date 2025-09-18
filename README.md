@@ -1,592 +1,217 @@
-[![CI Build Status](https://github.com/n4-networks/openusp/actions/workflows/build.yml/badge.svg)](https://github.com/n4-networks/openusp/actions/workflows/build.yml)
+# OpenUSP - Universal Device Management Platform
+
+<div align="center">
+
+[![CI Build](https://github.com/n4-networks/openusp/actions/workflows/build.yml/badge.svg)](https://github.com/n4-networks/openusp/actions/workflows/build.yml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Go Version](https://img.shields.io/badge/go-1.21+-blue.svg)](https://golang.org)
 [![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](https://docker.com)
+[![USP TR-369](https://img.shields.io/badge/USP-TR--369-green.svg)](https://usp.technology)
+[![TR-069](https://img.shields.io/badge/CWMP-TR--069-orange.svg)](https://www.broadband-forum.org)
 
-# OpenUSP - Universal Device Management Platform
+**Production-ready device management platform supporting both modern USP (TR-369) and legacy TR-069 CWMP protocols**
 
-Open source implementation of **USP (User Services Platform)** controller based on Broadband Forum's [USP specification](https://usp.technology), now enhanced with **TR-069 CWMP ACS** server capabilities for comprehensive legacy and next-generation device management.
+[🚀 Quick Start](#-quick-start) • [🏗️ Architecture](#-architecture) • [📖 Documentation](#-documentation) • [🤝 Contributing](#-contributing)
 
-> 🎉 **Latest Update**: OpenUSP now provides unified management for both USP (TR-369) and TR-069 CWMP devices in a single, production-ready platform.
+</div>
 
-## 📋 Table of Contents
+## ✨ What is OpenUSP?
 
-- [Overview](#overview)
-- [Key Features](#key-features)
-- [Architecture](#architecture)
-- [Quick Start](#quick-start)
-- [Installation](#installation)
-- [Usage](#usage)
-- [API Reference](#api-reference)
-- [Configuration](#configuration)
-- [Development](#development)
-- [Contributing](#contributing)
-- [License](#license)
+OpenUSP is a **unified device management platform** that bridges the gap between legacy TR-069 CWMP infrastructure and modern USP (User Services Platform) implementations. Built with **Go** and designed for **cloud-native deployments**.
 
-## 🎯 Overview
+### 🎯 Key Benefits
 
-OpenUSP bridges the gap between legacy TR-069 device management and modern USP protocol implementations, providing a unified platform for managing broadband devices, IoT devices, and network equipment. Built with Go and containerized deployment, it offers scalable, production-ready device management capabilities.
-
-### Why OpenUSP?
-
-- **Unified Management**: Single platform for USP and TR-069 devices
-- **Production Ready**: Battle-tested with comprehensive error handling and monitoring
-- **Standards Compliant**: Full TR-369 (USP) and TR-069 (CWMP) specification compliance
-- **Cloud Native**: Docker-based deployment with microservices architecture
-- **Developer Friendly**: Complete CLI tools, REST APIs, and extensive documentation
-
-## ⭐ Key Features
-
-### 🚀 USP (TR-369) Support
-- **Multi-Protocol Transport**: STOMP, CoAP, MQTT, WebSocket message protocols
-- **Device Lifecycle Management**: Discovery, onboarding, configuration, and monitoring
-- **Parameter Operations**: Get/Set/Add/Delete with full data model support
-- **Object Management**: Create, update, and delete managed objects
-- **Event Subscriptions**: Real-time notifications and event handling
-- **Bulk Operations**: Efficient batch operations for large device deployments
-- **Security**: End-to-end encryption, certificate-based authentication
-- **Standards Compliance**: Full TR-369 specification implementation
-
-### 🔧 TR-069 CWMP ACS Support
-- **Legacy Device Support**: Seamless management of existing TR-069 infrastructure
-- **SOAP/HTTP Protocol**: Complete CWMP protocol implementation with session management
-- **Device Operations**: Parameter management, file transfers, factory resets, reboots
-- **Session Management**: Stateful CWMP sessions with proper timeout handling
-- **Connection Requests**: Bidirectional communication with CPE devices
-- **File Transfer**: Firmware upgrades, configuration backup/restore
-- **Fault Handling**: Comprehensive error reporting and recovery mechanisms
-- **Authentication**: HTTP Basic authentication with configurable credentials
-
-### 🏗️ Platform Features
-- **Microservices Architecture**: Scalable, containerized deployment
-- **MongoDB Integration**: High-performance document database with indexing
-- **Redis Caching**: Session management and high-speed data access
-- **REST API**: Comprehensive HTTP API for all operations
-- **CLI Interface**: Interactive command-line tools for device management
-- **Docker Deployment**: Complete containerization with Docker Compose
-- **Health Monitoring**: Built-in health checks and monitoring endpoints
-- **Audit Logging**: Comprehensive logging for compliance and troubleshooting
-
-## 🏛️ Architecture
-
-OpenUSP follows a microservices architecture with clear separation of concerns:
-
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Web UI        │    │   CLI Tools     │    │  External Apps  │
-│   (Future)      │    │                 │    │                 │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         └───────────────────────┼───────────────────────┘
-                                 │
-                    ┌─────────────────┐
-                    │   API Server    │
-                    │   (REST API)    │
-                    └─────────────────┘
-                                 │
-                    ┌─────────────────┐
-                    │   Controller    │
-                    │  (USP + CWMP)   │
-                    └─────────────────┘
-                                 │
-        ┌────────────────────────┼────────────────────────┐
-        │                       │                        │
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   CWMP ACS      │    │   MongoDB       │    │   Redis Cache   │
-│   Server        │    │   Database      │    │                 │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-        │
-┌─────────────────┐
-│   TR-069        │
-│   Devices       │
-└─────────────────┘
-
-         MTP Layer (STOMP, CoAP, MQTT, WebSocket)
-                           │
-                ┌─────────────────┐
-                │   USP Devices   │
-                │   (TR-369)      │
-                └─────────────────┘
-```
-
-### Core Components
-
-| Component | Description | Technology |
-|-----------|-------------|------------|
-| **Controller** | Core device management engine | Go, gRPC |
-| **API Server** | REST API gateway | Go, Gorilla Mux |
-| **CWMP ACS** | TR-069 Auto Configuration Server | Go, SOAP/HTTP |
-| **CLI** | Command-line interface | Go, Ishell |
-| **Database** | Device data and configuration storage | MongoDB |
-| **Cache** | Session and temporary data | Redis |
-| **Message Broker** | USP protocol transport | ActiveMQ |
+- **🔄 Unified Management** - Single platform for both USP and TR-069 devices
+- **🏗️ Production Ready** - Battle-tested with comprehensive monitoring
+- **📋 Standards Compliant** - Full TR-369 (USP) and TR-069 (CWMP) compliance
+- **☁️ Cloud Native** - Containerized microservices with Docker/Kubernetes
+- **🔌 Multi-Protocol** - STOMP, CoAP, MQTT, WebSocket, and SOAP support
 
 ## 🚀 Quick Start
 
-Get OpenUSP running in minutes with Docker Compose:
+Get OpenUSP running in under 5 minutes:
 
 ```bash
-# Clone the repository
+# Clone and start
 git clone https://github.com/n4-networks/openusp.git
 cd openusp
-
-# Set up aliases (optional)
-source scripts/bash/aliases.sh
-
-# Start all services
 docker-compose up -d
 
-# Verify services are running
-docker-compose ps
-
-# Access the CLI
-./scripts/docker/cli.sh
+# Verify
+curl http://localhost:8081/api/v1/health
 ```
 
-### Service Status Check
-```bash
-$ docker-compose ps
-NAME                    IMAGE                              STATUS
-openusp-apiserver       n4networks/openusp-apiserver       Up 2 minutes
-openusp-broker          islandora/activemq                 Up 2 minutes  
-openusp-cache           redis:latest                       Up 2 minutes
-openusp-controller      n4networks/openusp-controller      Up 2 minutes
-openusp-cwmpacs         n4networks/openusp-cwmpacs         Up 2 minutes
-openusp-db              mongo:latest                       Up 2 minutes (healthy)
-openusp-swagger         swaggerapi/swagger-ui              Up 2 minutes
-```
+**Access Points:**
+- 🌐 **REST API**: http://localhost:8081
+- 📚 **API Documentation**: http://localhost:8080  
+- 🔧 **TR-069 ACS**: http://localhost:7547
+- 💻 **CLI Tools**: `./openusp-cli`
 
-### Access Points
+## 🏗️ Architecture
 
-After starting the services, you can access:
+OpenUSP follows a cloud-native microservices architecture with support for both modern USP (TR-369) and legacy TR-069 CWMP protocols.
 
-- **API Server**: http://localhost:8081 - Main REST API
-- **Swagger UI**: http://localhost:8080 - Interactive API documentation
-- **ActiveMQ Console**: http://localhost:8161 - Message broker management
-- **CLI**: `./scripts/docker/cli.sh` - Command line interface
+**Key architectural principles:**
+- 🏗️ **Microservices Design** - Loosely coupled, independently deployable services
+- ☁️ **Cloud Native** - Containerized with Kubernetes orchestration support  
+- 🔄 **Protocol Agnostic** - Unified management for USP and CWMP devices
+- 📊 **Event Driven** - Real-time device state changes and notifications
+- 🛡️ **Security First** - TLS encryption, certificate-based authentication
+
+For detailed architecture information, see [📋 Architecture Documentation](docs/ARCHITECTURE.md).
+
+### Core Components
+
+| Component | Purpose | Technology | Ports |
+|-----------|---------|------------|-------|
+| **API Server** | REST gateway with OpenAPI 3.0 | Go, Gorilla Mux | 8081, 8443 |
+| **Controller** | USP device management engine | Go, gRPC | 8082 |
+| **CWMP ACS** | TR-069 Auto Configuration Server | Go, SOAP/HTTP | 7547, 7548 |
+| **CLI** | Interactive command-line interface | Go, Ishell | N/A |
+
+## 🌟 Features
+
+### USP (TR-369) Support
+- Multi-protocol transport (STOMP, CoAP, MQTT, WebSocket)
+- Device lifecycle management and real-time configuration
+- Parameter operations (Get/Set/Add/Delete) with bulk operations
+- Event subscriptions and notifications
+- Security with end-to-end encryption
+
+### TR-069 CWMP Support  
+- Complete SOAP/HTTP protocol implementation
+- Device operations (parameters, file transfers, reboot, factory reset)
+- Session management with proper timeout handling
+- Bidirectional communication and connection requests
+- HTTP Basic/Digest authentication
+
+### Platform Features
+- Microservices architecture with Docker containerization
+- MongoDB database with Redis caching
+- Health monitoring and audit logging
+- Interactive Swagger UI documentation
+- Comprehensive CLI with multiple output formats
 
 ## 📦 Installation
 
-### Prerequisites
-
-- **Docker & Docker Compose**: For containerized deployment
-- **Go 1.21+**: For building from source  
-- **MongoDB**: Database backend
-- **Redis**: Caching layer
-- **ActiveMQ**: Message broker for USP protocols
-
 ### Docker Deployment (Recommended)
 
-1. **Clone and Start Services**:
-   ```bash
-   git clone https://github.com/n4-networks/openusp.git
-   cd openusp
-   docker-compose up -d
-   ```
-
-2. **Verify Installation**:
-   ```bash
-   # Check service health
-   curl http://localhost:8081/api/v1/health
-   
-   # Check CWMP ACS
-   curl http://localhost:7547/cwmp
-   ```
+```bash
+git clone https://github.com/n4-networks/openusp.git
+cd openusp
+docker-compose up -d
+```
 
 ### Building from Source
 
-1. **Prerequisites**:
-   ```bash
-   # Install Go 1.21+
-   # Install MongoDB, Redis, ActiveMQ
-   ```
-
-2. **Build Components**:
-   ```bash
-   git clone https://github.com/n4-networks/openusp.git
-   cd openusp
-   
-   # Build all components
-   make build
-   
-   # Or build individually
-   make controller
-   make apiserver  
-   make cli
-   make cwmpacs
-   ```
-
-3. **Configuration**:
-   ```bash
-   # Copy and edit configuration
-   cp configs/openusp.env.example configs/openusp.env
-   # Edit database and service URLs
-   ```
+```bash
+# Prerequisites: Go 1.21+, MongoDB, Redis, ActiveMQ
+git clone https://github.com/n4-networks/openusp.git
+cd openusp
+make build
+```
 
 ## 💻 Usage
 
 ### CLI Interface
-
-OpenUSP provides a comprehensive command-line interface for both USP and TR-069 device management:
-
 ```bash
-# Start interactive CLI
-$ ./openusp-cli
-OpenUsp-Cli>> 
-**************************************************************
-                          OpenUSP CLI
-**************************************************************
+# Interactive mode
+./openusp-cli
 
-# USP Device Management
-OpenUsp-Cli>> show agent all-ids
-Agent Number              : 1           
-EndpointId                : os::012345-000000000000
--------------------------------------------------
-Agent Number              : 2           
-EndpointId                : os::012345-02420A050007
--------------------------------------------------
-
-# Get USP device details
-OpenUsp-Cli>> show agent os::012345-000000000000
-Object Path                 : Device.LocalAgent.
- UpTime                     : 3628        
- SupportedProtocols         : STOMP, CoAP, MQTT, WebSocket
- SoftwareVersion            : 7.0.2       
- EndpointID                 : os::012345-000000000000
- ControllerNumberOfEntries  : 1           
- MTPNumberOfEntries         : 4           
-
-# USP Parameter Operations
-OpenUsp-Cli>> get Device.DeviceInfo.SoftwareVersion
-Parameter Value: 2.1.0-release
-
-OpenUsp-Cli>> set Device.WiFi.Radio.1.Enable true
-Operation successful
-
-# TR-069 CWMP Device Management  
-OpenUsp-Cli>> cwmp device list
-Device ID                           Manufacturer    Model           Status
-acs-device-001                      Broadcom        BCM63138        Online
-acs-device-002                      Qualcomm        QCA9563         Offline
-
-# CWMP Parameter Operations
-OpenUsp-Cli>> cwmp param get acs-device-001 Device.DeviceInfo.SoftwareVersion
-Parameter: Device.DeviceInfo.SoftwareVersion
-Value: 2.1.0-beta
-Type: string
-
-OpenUsp-Cli>> cwmp param set acs-device-001 Device.WiFi.Radio.1.Enable true
-Setting parameter Device.WiFi.Radio.1.Enable to true... Success
-
-# CWMP File Operations
-OpenUsp-Cli>> cwmp file download acs-device-001 http://server.com/firmware.bin firmware.bin
-File transfer initiated successfully
-Command Key: fw_upgrade_20240915_001
-
-# CWMP Device Control
-OpenUsp-Cli>> cwmp device reboot acs-device-001
-Reboot command sent successfully
+# Direct commands
+./openusp-cli show agents
+./openusp-cli get Device.WiFi.SSID
+./openusp-cli cwmp list-devices
 ```
 
 ### REST API Examples
-
-#### USP Device Management
-```bash
-# List all USP agents
-curl -X GET http://localhost:8081/api/v1/agents
-
-# Get agent information
-curl -X GET http://localhost:8081/api/v1/agents/os::012345-000000000000
-
-# Parameter operations
-curl -X POST http://localhost:8081/api/v1/agents/os::012345-000000000000/get \
-  -H "Content-Type: application/json" \
-  -d '{"parameters": ["Device.DeviceInfo.SoftwareVersion"]}'
-
-curl -X POST http://localhost:8081/api/v1/agents/os::012345-000000000000/set \
-  -H "Content-Type: application/json" \
-  -d '{"parameters": [{"name": "Device.WiFi.Radio.1.Enable", "value": "true"}]}'
-```
-
-#### TR-069 CWMP Device Management
-```bash
-# List all CWMP devices
-curl -X GET http://localhost:8081/api/v1/cwmp/devices
-
-# Get CWMP device details
-curl -X GET http://localhost:8081/api/v1/cwmp/devices/acs-device-001
-
-# Get parameter values
-curl -X POST http://localhost:8081/api/v1/cwmp/devices/acs-device-001/params/get \
-  -H "Content-Type: application/json" \
-  -d '{"parameters": ["Device.DeviceInfo.SoftwareVersion", "Device.WiFi.Radio.1.Enable"]}'
-
-# Set parameter values
-curl -X POST http://localhost:8081/api/v1/cwmp/devices/acs-device-001/params/set \
-  -H "Content-Type: application/json" \
-  -d '{"parameters": [{"name": "Device.WiFi.Radio.1.Enable", "value": "true", "type": "boolean"}]}'
-
-# Initiate file download
-curl -X POST http://localhost:8081/api/v1/cwmp/devices/acs-device-001/files/download \
-  -H "Content-Type: application/json" \
-  -d '{"url": "http://server.com/firmware.bin", "filename": "firmware.bin", "type": "firmware"}'
-
-# Reboot device
-curl -X POST http://localhost:8081/api/v1/cwmp/devices/acs-device-001/reboot \
-  -H "Content-Type: application/json" \
-  -d '{"command_key": "reboot_maintenance_001"}'
-```
-
-## 📚 API Reference
-
-OpenUSP provides comprehensive REST APIs for device management with complete OpenAPI 3.0.3 documentation.
-
-### 🔗 Interactive Documentation
-
-- **Swagger UI**: http://localhost:8080 - Interactive API explorer and testing interface
-- **OpenAPI Spec**: [api/openusp.yaml](api/openusp.yaml) - Complete API specification
-- **API Documentation**: [api/README.md](api/README.md) - Detailed API reference
-
-### 🔐 Authentication
-
-All API endpoints use HTTP Basic Authentication:
-- **Default Username**: `admin`
-- **Default Password**: `admin`
-
-### 🚀 Quick API Examples
-
 ```bash
 # Health check
-curl -u admin:admin http://localhost:8081/health
+curl http://localhost:8081/api/v1/health
 
 # List USP agents
-curl -u admin:admin http://localhost:8081/get/agents/
-
-# Get device parameters (USP)
-curl -u admin:admin http://localhost:8081/get/params/os::012345-000000000000/Device.WiFi.
+curl -u admin:admin http://localhost:8081/api/v1/agents
 
 # List CWMP devices
-curl -u admin:admin http://localhost:8081/cwmp/devices/
-
-# Get CWMP device parameters
-curl -u admin:admin "http://localhost:8081/cwmp/device/acs-device-001/params?parameters=Device.DeviceInfo.SoftwareVersion"
+curl -u admin:admin http://localhost:8081/api/v1/cwmp/devices
 ```
-
-### 📋 Key USP API Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/get/agents/` | List all USP agents |
-| GET | `/get/params/{epId}/{path}` | Get parameter values |
-| POST | `/set/params/{epId}/{path}` | Set parameter values |
-| GET | `/get/instances/{epId}/{path}` | Get object instances |
-| POST | `/add/instances/{epId}/{path}` | Add object instances |
-| POST | `/operate/cmd/{epId}/{path}` | Execute operations |
-| GET | `/get/dm/{epId}/{path}` | Get data model info |
-
-### 📋 Key TR-069 CWMP API Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/cwmp/devices/` | List all CWMP devices |
-| GET | `/cwmp/device/{deviceId}` | Get device details |
-| GET | `/cwmp/device/{deviceId}/params` | Get parameter values |
-| POST | `/cwmp/device/{deviceId}/params` | Set parameter values |
-| POST | `/cwmp/device/{deviceId}/download` | Download file to device |
-| POST | `/cwmp/device/{deviceId}/upload` | Upload file from device |
-| POST | `/cwmp/device/{deviceId}/reboot` | Reboot device |
-| POST | `/cwmp/device/{deviceId}/factory-reset` | Factory reset device |
-
-> 💡 **Tip**: Use the Swagger UI at http://localhost:8080 for interactive API testing with authentication, request validation, and response examples.
 
 ## ⚙️ Configuration
 
-### Environment Variables
-
-OpenUSP uses environment variables for configuration. Key settings include:
+Key environment variables:
 
 ```bash
-# Database Configuration
+# Database
 DB_ADDR=localhost:27017
 DB_USER=admin
 DB_PASSWD=admin
-DB_NAME=usp
 
-# USP Controller Settings  
-CNTLR_GRPC_PORT=9001
-CNTLR_EPID=self::openusp-controller
-
-# API Server Settings
+# API Server
 HTTP_PORT=8081
 API_SERVER_AUTH_NAME=admin
 API_SERVER_AUTH_PASSWD=admin
 
-# CWMP ACS Settings
+# CWMP ACS
 CWMP_ACS_ENABLE=true
 CWMP_ACS_PORT=7547
-CWMP_ACS_TLS_PORT=7548
 CWMP_ACS_USERNAME=acs
 CWMP_ACS_PASSWORD=admin
 
 # Protocol Settings
 STOMP_ADDR=localhost:61613
 MQTT_ADDR=localhost:1883
-COAP_SERVER_PORT=5683
-WS_SERVER_PORT=8080
 ```
 
-### Docker Compose Configuration
+## 📖 Documentation
 
-```yaml
-version: '3.7'
-services:
-  openusp-controller:
-    image: n4networks/openusp-controller:latest
-    ports:
-      - "9001:9001"
-    environment:
-      - DB_ADDR=openusp-db:27017
-      - STOMP_ADDR=openusp-broker:61613
-      
-  openusp-apiserver:
-    image: n4networks/openusp-apiserver:latest
-    ports:
-      - "8081:8081"
-    depends_on:
-      - openusp-controller
-      
-  openusp-cwmpacs:
-    image: n4networks/openusp-cwmpacs:latest
-    ports:
-      - "7547:7547"
-      - "7548:7548"
-    depends_on:
-      - openusp-db
-```
+- [🏗️ Architecture Guide](docs/ARCHITECTURE.md) - Comprehensive technical architecture
+- [🚀 Deployment Guide](docs/DEPLOYMENT.md) - Production deployment guide  
+- [📡 TR-069 CWMP Guide](docs/TR069_CWMP_ACS.md) - CWMP ACS setup and usage
+- [🔧 API Documentation](api/README.md) - REST API reference
+- [💻 CLI Reference](pkg/cli/doc/) - Command-line interface docs
 
-## 🔧 Development
-
-### Building from Source
-
-```bash
-# Clone repository
-git clone https://github.com/n4-networks/openusp.git
-cd openusp
-
-# Install dependencies
-go mod download
-
-# Build all components
-make build
-
-# Build specific components
-make controller    # Build USP controller
-make apiserver     # Build API server  
-make cli          # Build CLI tools
-make cwmpacs      # Build CWMP ACS server
-
-# Run tests
-make test
-
-# Build Docker images
-make images
-```
-
-### Project Structure
-
-```
-openusp/
-├── cmd/                    # Application entry points
-│   ├── controller/         # USP Controller main
-│   ├── apiserver/         # API Server main  
-│   ├── cli/               # CLI application main
-│   └── cwmpacs/           # CWMP ACS Server main
-├── pkg/                   # Core packages
-│   ├── cntlr/            # Controller logic
-│   ├── apiserver/        # API server handlers
-│   ├── cli/              # CLI implementation
-│   ├── cwmp/             # TR-069 CWMP implementation
-│   ├── db/               # Database layer
-│   ├── mtp/              # Message Transport Protocols
-│   └── pb/               # Protocol buffer definitions
-├── configs/               # Configuration files
-├── deployments/          # Docker compose and deployment files
-├── docs/                 # Documentation
-├── scripts/              # Utility scripts
-└── test/                 # Test files and test data
-```
-
-### Adding New Features
-
-1. **Protocol Extensions**: Add new MTP protocols in `pkg/mtp/`
-2. **API Endpoints**: Extend handlers in `pkg/apiserver/`
-3. **CLI Commands**: Add commands in `pkg/cli/`
-4. **Database Models**: Extend models in `pkg/db/`
-5. **CWMP Methods**: Add TR-069 methods in `pkg/cwmp/`
-
-## 🌐 Network Ports
+## 🚦 Network Ports
 
 | Port | Service | Protocol | Description |
 |------|---------|----------|-------------|
 | 8081 | API Server | HTTP | REST API endpoints |
-| 8443 | API Server | HTTPS | Secure REST API |
-| 9001 | Controller | gRPC | Internal service communication |
+| 8082 | Controller | gRPC | Internal service communication |
 | 7547 | CWMP ACS | HTTP | TR-069 ACS server |
 | 7548 | CWMP ACS | HTTPS | Secure TR-069 ACS |
-| 5683 | CoAP | UDP | CoAP message transport |
-| 5684 | CoAP | UDP | Secure CoAP (DTLS) |
-| 8080 | WebSocket | TCP | WebSocket transport |
-| 8443 | WebSocket | TCP | Secure WebSocket |
-| 61613 | STOMP | TCP | STOMP message broker |
-| 61614 | STOMP | TCP | Secure STOMP (TLS) |
-| 1883 | MQTT | TCP | MQTT message broker |
-| 8883 | MQTT | TCP | Secure MQTT (TLS) |
-| 27017 | MongoDB | TCP | Database |
+| 8080 | Swagger UI | HTTP | API documentation |
+| 27017 | MongoDB | TCP | Database server |
 | 6379 | Redis | TCP | Cache server |
-
-## 📖 Documentation
-
-- **[TR-069 CWMP ACS Guide](docs/TR069_CWMP_ACS.md)**: Complete guide for TR-069 CWMP ACS setup and usage
-- **[API Documentation](api/README.md)**: Detailed REST API reference
-- **[CLI Reference](pkg/cli/doc/)**: Command-line interface documentation  
-- **[Developer Guide](docs/DEVELOPMENT.md)**: Development setup and contribution guidelines
-- **[Deployment Guide](docs/DEPLOYMENT.md)**: Production deployment recommendations
-- **[Protocol Support](docs/PROTOCOLS.md)**: USP and TR-069 protocol implementation details
+| 61613 | ActiveMQ | TCP | Message broker |
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md).
 
 ### Development Workflow
-
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes
-4. Add tests for new functionality
-5. Ensure all tests pass (`make test`)
-6. Commit your changes (`git commit -m 'Add amazing feature'`)
-7. Push to the branch (`git push origin feature/amazing-feature`)
-8. Open a Pull Request
+3. Make changes and add tests
+4. Ensure tests pass (`make test`)
+5. Commit changes (`git commit -m 'Add amazing feature'`)
+6. Push and open a Pull Request
 
 ## 📄 License
 
-This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- [Broadband Forum](https://www.broadband-forum.org/) for USP and TR-069 specifications
-- [USP Technology](https://usp.technology/) community
-- Open source contributors and maintainers
+Licensed under the Apache License 2.0 - see [LICENSE](LICENSE) for details.
 
 ## 📞 Support
 
-- **Website**: [https://openusp.org](https://openusp.org)
-- **Documentation**: [https://docs.openusp.org](https://docs.openusp.org)  
-- **Issues**: [GitHub Issues](https://github.com/n4-networks/openusp/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/n4-networks/openusp/discussions)
+- 🌐 **Website**: [openusp.org](https://openusp.org)
+- 📚 **Documentation**: [docs.openusp.org](https://docs.openusp.org)
+- 🐛 **Issues**: [GitHub Issues](https://github.com/n4-networks/openusp/issues)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/n4-networks/openusp/discussions)
 
 ---
 
-**OpenUSP** - Bridging legacy TR-069 and modern USP device management in a unified, production-ready platform.
+<div align="center">
 
+**⭐ Star us on GitHub if OpenUSP helps you manage your devices! ⭐**
 
+**OpenUSP - Bridging legacy TR-069 and modern USP device management**
+
+</div>

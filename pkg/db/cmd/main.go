@@ -114,12 +114,12 @@ func initDb() error {
 		log.Println("DB_PASSWD is not set, returning...")
 		return errors.New("DB_PASSWD is not set")
 	}
-	dbClient, err := db.Connect(dbAddr, dbUser, dbPasswd, 10*time.Second)
+	dbClient, err := db.ConnectWithParams(dbAddr, dbUser, dbPasswd, 10*time.Second)
 	if err != nil {
 		log.Println("Db connect failed, exiting...err: ", err)
 		return err
 	}
-	return uspDb.Init(dbClient, "usp")
+	return uspDb.Init(dbClient)
 }
 
 func instanceTest() {

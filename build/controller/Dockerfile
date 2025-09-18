@@ -13,13 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 # Build the application from source
 FROM --platform=$BUILDPLATFORM golang:1.21 AS build-stage
 
 ARG TARGETOS TARGETARCH
-ENV GOOS $TARGETOS
-ENV GOARCH $TARGETARCH
+ENV GOOS=${TARGETOS}
+ENV GOARCH=${TARGETARCH}
 
 # Set destination for COPY
 WORKDIR /app
@@ -32,32 +31,37 @@ COPY pkg ./pkg
 COPY cmd ./cmd
 COPY Makefile ./
 
-RUN make controller
+# Build with explicit cross-compilation settings
+RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} CGO_ENABLED=0 go build -ldflags="-s -w" -o cmd/controller/controller ./cmd/controller
 
-# Build CWMP ACS server
-RUN cd cmd/cwmpacs && go build -o cwmpacs .
-
-# Run the tests in the container
-#FROM build-stage AS run-test-stage
-#RUN go test -v ./...
-
-# Deploy the controller application binary into a lean image
-#FROM gcr.io/distroless/base-debian11 AS build-release-stage
+# Deploy the application binary into a lean image
 FROM debian:stable AS build-release-stage
 
-WORKDIR /
+# Create non-root user
+RUN groupadd -r openusp && useradd --no-log-init -r -g openusp openusp
 
-COPY --from=build-stage /app/cmd/controller/controller /controller
+# Create application directories following FHS conventions
+RUN mkdir -p /opt/openusp/bin \
+    /opt/openusp/configs \
+    /opt/openusp/scripts \
+    /var/lib/openusp \
+    /var/log/openusp && \
+    chown -R openusp:openusp /opt/openusp /var/lib/openusp /var/log/openusp
 
-ENTRYPOINT ["/controller"]
+WORKDIR /opt/openusp
 
-# Deploy the CWMP ACS server binary into a lean image
-FROM debian:stable AS cwmpacs
+# Copy the binary and scripts to standard location
+COPY --from=build-stage /app/cmd/controller/controller /opt/openusp/bin/controller
+COPY --chown=openusp:openusp build/common/entrypoint-common.sh /opt/openusp/scripts/entrypoint-common.sh
+COPY --chown=openusp:openusp build/controller/entrypoint.sh /opt/openusp/scripts/entrypoint.sh
 
-WORKDIR /
+# Make scripts executable
+RUN chmod +x /opt/openusp/scripts/*.sh
 
-COPY --from=build-stage /app/cmd/cwmpacs/cwmpacs /cwmpacs
+# Switch to non-root user
+USER openusp
 
-EXPOSE 7547 7548
+EXPOSE 8082
 
-ENTRYPOINT ["/cwmpacs"]
+ENTRYPOINT ["/opt/openusp/scripts/entrypoint.sh"]
+CMD []

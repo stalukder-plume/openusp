@@ -18,10 +18,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/n4-networks/openusp/pkg/cwmp"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 // TR-069 CWMP API endpoints
@@ -36,6 +37,7 @@ const (
 	CWMP_DOWNLOAD           = "/cwmp/device/{deviceId}/download"
 	CWMP_UPLOAD             = "/cwmp/device/{deviceId}/upload"
 	CWMP_CONNECTION_REQUEST = "/cwmp/device/{deviceId}/connection-request"
+	CWMP_POPULATE_SAMPLE    = "/cwmp/populate-sample-data"
 )
 
 // CwmpDeviceInfo represents device information for API responses
@@ -108,48 +110,76 @@ func (as *ApiServer) setCwmpRoutesHandlers() {
 	// File transfer endpoints
 	as.router.HandleFunc(CWMP_DOWNLOAD, as.downloadCwmpDevice).Methods("POST")
 	as.router.HandleFunc(CWMP_UPLOAD, as.uploadCwmpDevice).Methods("POST")
+	
+	// Sample data endpoint (for testing/demo)
+	as.router.HandleFunc(CWMP_POPULATE_SAMPLE, as.populateSampleCwmpData).Methods("POST")
 }
 
 // getCwmpDevices returns all CWMP devices
 func (as *ApiServer) getCwmpDevices(w http.ResponseWriter, r *http.Request) {
+	// Check database connection
+	if as.dbH.cwmpIntf == nil {
+		httpSendRes(w, nil, fmt.Errorf("CWMP database not connected"))
+		return
+	}
+
 	// Get query parameters for filtering
 	manufacturer := r.URL.Query().Get("manufacturer")
 	productClass := r.URL.Query().Get("product_class")
 	onlineOnly := r.URL.Query().Get("online_only") == "true"
 	
-	// Get devices from controller (mock implementation)
-	devices := []CwmpDeviceInfo{
-		{
-			DeviceId:        "cwmp:Example:123456:RG:ABC123",
-			Manufacturer:    "Example",
-			OUI:            "123456",
-			ProductClass:   "RG",
-			SerialNumber:   "ABC123",
-			SoftwareVersion: "1.0.0",
-			HardwareVersion: "1.0",
-			LastInformTime:  "2023-12-01T10:00:00Z",
-			IsOnline:       true,
-			ParameterCount: 150,
-			ConnectionRequestURL: "http://192.168.1.1:7547/",
-		},
+	// Build database filter
+	filter := bson.M{}
+	if manufacturer != "" {
+		filter["manufacturer"] = bson.M{
+			"$regex":   manufacturer,
+			"$options": "i", // case insensitive
+		}
+	}
+	if productClass != "" {
+		filter["product_class"] = bson.M{
+			"$regex":   productClass,
+			"$options": "i", // case insensitive
+		}
+	}
+	if onlineOnly {
+		// Consider device online if last inform was within 5 minutes
+		fiveMinutesAgo := time.Now().Add(-5 * time.Minute)
+		filter["last_inform"] = bson.M{
+			"$gte": fiveMinutesAgo,
+		}
 	}
 	
-	// Apply filters
-	var filteredDevices []CwmpDeviceInfo
-	for _, device := range devices {
-		if manufacturer != "" && !strings.Contains(strings.ToLower(device.Manufacturer), strings.ToLower(manufacturer)) {
-			continue
-		}
-		if productClass != "" && !strings.Contains(strings.ToLower(device.ProductClass), strings.ToLower(productClass)) {
-			continue
-		}
-		if onlineOnly && !device.IsOnline {
-			continue
-		}
-		filteredDevices = append(filteredDevices, device)
+	// Get devices from database
+	dbDevices, err := as.dbH.cwmpIntf.GetCwmpDevicesByFilter(filter)
+	if err != nil {
+		httpSendRes(w, nil, fmt.Errorf("failed to retrieve devices: %w", err))
+		return
 	}
 	
-	httpSendRes(w, filteredDevices, nil)
+	// Convert to API response format
+	var devices []CwmpDeviceInfo
+	for _, dbDevice := range dbDevices {
+		// Determine if device is online (last inform within 5 minutes)
+		isOnline := time.Since(dbDevice.LastInform) <= 5*time.Minute
+		
+		device := CwmpDeviceInfo{
+			DeviceId:        dbDevice.ID,
+			Manufacturer:    dbDevice.Manufacturer,
+			OUI:            dbDevice.OUI,
+			ProductClass:   dbDevice.ProductClass,
+			SerialNumber:   dbDevice.SerialNumber,
+			SoftwareVersion: dbDevice.SoftwareVersion,
+			HardwareVersion: dbDevice.HardwareVersion,
+			LastInformTime:  dbDevice.LastInform.Format(time.RFC3339),
+			IsOnline:       isOnline,
+			ParameterCount: len(dbDevice.Parameters),
+			ConnectionRequestURL: dbDevice.ConnectionRequestURL,
+		}
+		devices = append(devices, device)
+	}
+	
+	httpSendRes(w, devices, nil)
 }
 
 // getCwmpDevice returns specific CWMP device information
@@ -162,19 +192,35 @@ func (as *ApiServer) getCwmpDevice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	
-	// Mock device info (in real implementation, get from controller)
+	// Check database connection
+	if as.dbH.cwmpIntf == nil {
+		httpSendRes(w, nil, fmt.Errorf("CWMP database not connected"))
+		return
+	}
+	
+	// Get device from database
+	dbDevice, err := as.dbH.cwmpIntf.GetCwmpDeviceByID(deviceId)
+	if err != nil {
+		httpSendRes(w, nil, fmt.Errorf("device not found: %w", err))
+		return
+	}
+	
+	// Determine if device is online (last inform within 5 minutes)
+	isOnline := time.Since(dbDevice.LastInform) <= 5*time.Minute
+	
+	// Convert to API response format
 	device := CwmpDeviceInfo{
-		DeviceId:        deviceId,
-		Manufacturer:    "Example",
-		OUI:            "123456",
-		ProductClass:   "RG",
-		SerialNumber:   "ABC123",
-		SoftwareVersion: "1.0.0",
-		HardwareVersion: "1.0",
-		LastInformTime:  "2023-12-01T10:00:00Z",
-		IsOnline:       true,
-		ParameterCount: 150,
-		ConnectionRequestURL: "http://192.168.1.1:7547/",
+		DeviceId:        dbDevice.ID,
+		Manufacturer:    dbDevice.Manufacturer,
+		OUI:            dbDevice.OUI,
+		ProductClass:   dbDevice.ProductClass,
+		SerialNumber:   dbDevice.SerialNumber,
+		SoftwareVersion: dbDevice.SoftwareVersion,
+		HardwareVersion: dbDevice.HardwareVersion,
+		LastInformTime:  dbDevice.LastInform.Format(time.RFC3339),
+		IsOnline:       isOnline,
+		ParameterCount: len(dbDevice.Parameters),
+		ConnectionRequestURL: dbDevice.ConnectionRequestURL,
 	}
 	
 	httpSendRes(w, device, nil)
@@ -190,28 +236,61 @@ func (as *ApiServer) getCwmpDeviceInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	
-	// Get detailed device info including all parameters
+	// Check database connection
+	if as.dbH.cwmpIntf == nil {
+		httpSendRes(w, nil, fmt.Errorf("CWMP database not connected"))
+		return
+	}
+	
+	// Get device from database
+	dbDevice, err := as.dbH.cwmpIntf.GetCwmpDeviceByID(deviceId)
+	if err != nil {
+		httpSendRes(w, nil, fmt.Errorf("device not found: %w", err))
+		return
+	}
+	
+	// Determine if device is online
+	isOnline := time.Since(dbDevice.LastInform) <= 5*time.Minute
+	
+	// Calculate uptime in human-readable format
+	uptimeSeconds := dbDevice.UpTime
+	uptimeDays := uptimeSeconds / (24 * 3600)
+	uptimeHours := (uptimeSeconds % (24 * 3600)) / 3600
+	uptimeStr := fmt.Sprintf("%d days, %d hours", uptimeDays, uptimeHours)
+	
+	// Build detailed device info including all available data
 	deviceInfo := map[string]interface{}{
 		"device_id": deviceId,
 		"basic_info": CwmpDeviceInfo{
-			DeviceId:        deviceId,
-			Manufacturer:    "Example",
-			OUI:            "123456",
-			ProductClass:   "RG",
-			SerialNumber:   "ABC123",
-			SoftwareVersion: "1.0.0",
-			HardwareVersion: "1.0",
-			LastInformTime:  "2023-12-01T10:00:00Z",
-			IsOnline:       true,
-			ParameterCount: 150,
-			ConnectionRequestURL: "http://192.168.1.1:7547/",
+			DeviceId:        dbDevice.ID,
+			Manufacturer:    dbDevice.Manufacturer,
+			OUI:            dbDevice.OUI,
+			ProductClass:   dbDevice.ProductClass,
+			SerialNumber:   dbDevice.SerialNumber,
+			SoftwareVersion: dbDevice.SoftwareVersion,
+			HardwareVersion: dbDevice.HardwareVersion,
+			LastInformTime:  dbDevice.LastInform.Format(time.RFC3339),
+			IsOnline:       isOnline,
+			ParameterCount: len(dbDevice.Parameters),
+			ConnectionRequestURL: dbDevice.ConnectionRequestURL,
 		},
 		"capabilities": []string{"Download", "Upload", "Reboot", "FactoryReset"},
 		"statistics": map[string]interface{}{
-			"uptime": "7 days, 3 hours",
-			"memory_usage": "45%",
-			"cpu_usage": "12%",
+			"uptime":       uptimeStr,
+			"last_inform":  dbDevice.LastInform.Format(time.RFC3339),
+			"last_bootstrap": dbDevice.LastBootstrap.Format(time.RFC3339),
+			"current_time": dbDevice.CurrentTime.Format(time.RFC3339),
+			"ip_address":   dbDevice.IPAddress,
 		},
+		"settings": map[string]interface{}{
+			"periodic_inform_enable":   dbDevice.PeriodicInformEnable,
+			"periodic_inform_interval": dbDevice.PeriodicInformInterval,
+			"provisioning_code":        dbDevice.ProvisioningCode,
+			"spec_version":            dbDevice.SpecVersion,
+		},
+		"tags": dbDevice.Tags,
+		"parameters": dbDevice.Parameters,
+		"recent_events": dbDevice.Events,
 	}
 	
 	httpSendRes(w, deviceInfo, nil)
@@ -227,30 +306,72 @@ func (as *ApiServer) getCwmpParams(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	
-	// Get parameter names from query or body
-	parameterNames := r.URL.Query()["param"]
-	if len(parameterNames) == 0 {
-		// If no specific parameters requested, return commonly requested ones
-		parameterNames = []string{
-			"Device.DeviceInfo.SoftwareVersion",
-			"Device.DeviceInfo.HardwareVersion",
-			"Device.DeviceInfo.ManufacturerOUI",
-			"Device.DeviceInfo.SerialNumber",
-		}
+	// Check database connection
+	if as.dbH.cwmpIntf == nil {
+		httpSendRes(w, nil, fmt.Errorf("CWMP database not connected"))
+		return
 	}
 	
-	// Mock response (in real implementation, get from controller)
-	parameters := []cwmp.ParameterValueStruct{
-		{Name: "Device.DeviceInfo.SoftwareVersion", Value: "1.0.0", Type: "string"},
-		{Name: "Device.DeviceInfo.HardwareVersion", Value: "1.0", Type: "string"},
-		{Name: "Device.DeviceInfo.ManufacturerOUI", Value: "123456", Type: "string"},
-		{Name: "Device.DeviceInfo.SerialNumber", Value: "ABC123", Type: "string"},
+	// Get parameter names from query
+	parameterNames := r.URL.Query()["parameters"]
+	
+	var parameters []cwmp.ParameterValueStruct
+	
+	if len(parameterNames) == 0 {
+		// If no specific parameters requested, get all parameters for the device
+		dbParams, err := as.dbH.cwmpIntf.GetCwmpParametersByDeviceID(deviceId)
+		if err != nil {
+			httpSendRes(w, nil, fmt.Errorf("failed to retrieve parameters: %w", err))
+			return
+		}
+		
+		// Convert to API format
+		for _, dbParam := range dbParams {
+			parameters = append(parameters, cwmp.ParameterValueStruct{
+				Name:  dbParam.Path,
+				Value: dbParam.Value,
+				Type:  dbParam.Type,
+			})
+		}
+	} else {
+		// Get specific parameters requested
+		dbParams, err := as.dbH.cwmpIntf.GetCwmpParametersByPath(deviceId, parameterNames)
+		if err != nil {
+			httpSendRes(w, nil, fmt.Errorf("failed to retrieve specific parameters: %w", err))
+			return
+		}
+		
+		// Convert to API format
+		for _, dbParam := range dbParams {
+			parameters = append(parameters, cwmp.ParameterValueStruct{
+				Name:  dbParam.Path,
+				Value: dbParam.Value,
+				Type:  dbParam.Type,
+			})
+		}
+		
+		// If some parameters weren't found, add them with empty values
+		found := make(map[string]bool)
+		for _, dbParam := range dbParams {
+			found[dbParam.Path] = true
+		}
+		
+		for _, paramName := range parameterNames {
+			if !found[paramName] {
+				parameters = append(parameters, cwmp.ParameterValueStruct{
+					Name:  paramName,
+					Value: "",
+					Type:  "string",
+				})
+			}
+		}
 	}
 	
 	response := map[string]interface{}{
 		"device_id":   deviceId,
-		"parameters": parameters,
-		"timestamp":  "2023-12-01T10:00:00Z",
+		"parameters":  parameters,
+		"timestamp":   time.Now().Format(time.RFC3339),
+		"count":       len(parameters),
 	}
 	
 	httpSendRes(w, response, nil)

@@ -44,8 +44,17 @@ func (as *ApiServer) connectDb() error {
 	if err := usp.Init(dbClient); err != nil {
 		return err
 	}
+	
+	/* Initialize CWMP collection connection */
+	cwmp := &db.CwmpDb{}
+	if err := cwmp.InitCwmp(dbClient); err != nil {
+		log.Println("Warning: CWMP DB initialization failed:", err)
+		// Don't fail completely if CWMP DB init fails
+	}
+	
 	as.dbH.client = dbClient
 	as.dbH.uspIntf = usp
+	as.dbH.cwmpIntf = cwmp
 	log.Println("Connection to DB..SUCCESS")
 	return nil
 }

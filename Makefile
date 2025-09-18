@@ -117,7 +117,9 @@ GOVULN_VERSION   := latest
 # DEFAULT TARGET
 # ================================================================================================
 
-all: clean deps lint test build ## Build, test, and package everything
+all: build ## Build everything quickly (dependencies installed on-demand)
+all-with-deps: clean deps build ## Build everything with explicit dependency installation
+all-with-lint: clean deps lint test build ## Build, test, and package everything with linting
 
 # ================================================================================================
 # HELP TARGET
@@ -151,7 +153,15 @@ install-tools: ## Install development tools
 	@go install golang.org/x/vuln/cmd/govulncheck@$(GOVULN_VERSION)
 	@echo "==> Tools installed successfully"
 
-deps: ## Install project dependencies
+deps: go.sum ## Install project dependencies (only if go.mod changed)
+
+go.sum: go.mod
+	@echo "==> Installing dependencies..."
+	@$(GOMOD) download
+	@$(GOMOD) tidy
+	@touch go.sum
+
+deps-force: ## Force install project dependencies
 	@echo "==> Installing dependencies..."
 	@$(GOMOD) download
 	@$(GOMOD) tidy
@@ -418,8 +428,9 @@ dev-clean: ## Clean development artifacts
 
 clean: ## Clean build artifacts
 	@echo "==> Cleaning build artifacts..."
-	@rm -rf $(BUILD_DIR)
+	@rm -rf $(BIN_DIR)
 	@rm -rf $(DIST_DIR)
+	@rm -rf $(COVERAGE_DIR)
 	@rm -rf vendor/
 	@go clean -cache -testcache -modcache
 

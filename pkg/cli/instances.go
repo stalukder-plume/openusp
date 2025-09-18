@@ -102,7 +102,6 @@ func (cli *Cli) addInstanceCmd(c *ishell.Context) {
 	c.Println("Instance created with path:", instPath)
 }
 
-/*
 func (cli *Cli) GetInstancePathByAlias(name string) (string, error) {
 	inst, err := cli.dbGetInstanceByAlias(name)
 	if err != nil {
@@ -110,4 +109,3 @@ func (cli *Cli) GetInstancePathByAlias(name string) (string, error) {
 	}
 	return inst.Path, nil
 }
-*/
