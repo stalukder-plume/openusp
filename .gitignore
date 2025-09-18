@@ -11,6 +11,16 @@ cmd/apiserver/apiserver
 cmd/cli/cli
 history
 
+# Build artifacts and binaries
+build/bin/
+build/dist/
+dist/
+*.bin
+
+# Binary executables
+openusp-*
+**/openusp-*
+
 # Test binary, built with `go test -c`
 *.test
 

@@ -154,7 +154,7 @@ func (c *MtpCoap) SendMsg(msg []byte) error {
 	if c.conn == nil {
 		c.conn, err = udp.Dial(c.addr)
 		if err != nil {
-			log.Println("Error dialing: %v", err)
+			log.Printf("Error dialing: %v", err)
 			return err
 		}
 	}
@@ -162,7 +162,7 @@ func (c *MtpCoap) SendMsg(msg []byte) error {
 	//ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	//defer cancel()
 	r := bytes.NewReader(msg)
-	log.Println("Sending post msg")
+	log.Printf("Sending post msg")
 	resp, err := c.conn.Post(ctx, c.Path, message.AppOctets, r, *c.selfUriQuery)
 	if err != nil {
 		log.Printf("Cannot get response: %v", err)
