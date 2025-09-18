@@ -1,45 +1,26 @@
-# OpenUSP Documentation
+# OpenUSP Documentation Index
 
-This directory contains comprehensive documentation for the OpenUSP platform - a cloud-native USP/CWMP device management system.
+This folder contains detailed documentation referenced from the root README. Each document is intentionally scoped and should stay concise and task‑focused.
 
-## Documentation Index
+## Index
 
-### Core Architecture
-- [**ARCHITECTURE.md**](./ARCHITECTURE.md) - System architecture, components, and data flow
-- [**DEPLOYMENT.md**](./DEPLOYMENT.md) - Deployment strategies and environment setup
+| Document | Purpose |
+|----------|---------|
+| [ARCHITECTURE.md](ARCHITECTURE.md) | High-level system design, component boundaries, data flows |
+| [COMPONENTS.md](COMPONENTS.md) | Detailed description of each service/component and its responsibilities |
+| [DEVELOPMENT.md](DEVELOPMENT.md) | Local dev environment setup, build, test, lint, debug workflows |
+| [DEPLOYMENT.md](DEPLOYMENT.md) | Deployment options (Docker Compose, Kubernetes, production hardening) |
+| [CONFIGURATION.md](CONFIGURATION.md) | Environment variables, configuration files, secrets, TLS |
+| [SECURITY.md](SECURITY.md) | Security model, authn/z, certificates, vulnerability scanning |
+| [OPERATIONS.md](OPERATIONS.md) | Monitoring, metrics, logging, tracing, troubleshooting |
+| [RELEASES.md](RELEASES.md) | Semantic versioning, tagging, Docker image strategy, upgrade notes |
+| [PROTOCOLS.md](PROTOCOLS.md) | USP (TR-369) & CWMP (TR-069) protocol behavior, mapping, extensions |
+| [API.md](API.md) | REST/CLI usage pointers and linkouts to generated references |
 
-### Development Guides
-- [**DEVELOPMENT.md**](./DEVELOPMENT.md) - Development setup and contribution guidelines
-- [**TESTING.md**](./TESTING.md) - Testing strategies and CI/CD pipeline
-- [**DATABASE.md**](./DATABASE.md) - Database schema and data models
+## Contribution Notes
+- Keep root README brief—deep explanations belong here.
+- Prefer linking between docs instead of duplicating content.
+- Add diagrams as `.drawio` or `.svg` alongside the doc that references them.
 
-### Protocol Integration
-- [**USP.md**](./USP.md) - User Services Platform integration
-- [**CWMP.md**](./CWMP.md) - TR-069 CWMP protocol implementation
-- [**MTP.md**](./MTP.md) - Message Transport Protocol configurations
-
-### Operations
-- [**MONITORING.md**](./MONITORING.md) - Observability and monitoring setup
-- [**TROUBLESHOOTING.md**](./TROUBLESHOOTING.md) - Common issues and solutions
-- [**SECURITY.md**](./SECURITY.md) - Security considerations and best practices
-
-## Quick Start
-
-1. **For Developers**: Start with [DEVELOPMENT.md](./DEVELOPMENT.md)
-2. **For Deployment**: Reference [DEPLOYMENT.md](./DEPLOYMENT.md)  
-3. **For API Usage**: Access Swagger UI at `/swagger/` endpoint when running the API server
-4. **For Architecture**: Review [ARCHITECTURE.md](./ARCHITECTURE.md)
-
-## Getting Help
-
-- Check [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for common issues
-- Review the specific protocol documentation for integration details
-- Refer to the API documentation for endpoint usage
-
-## Document Maintenance
-
-All documentation is maintained in Markdown format with:
-- Consistent formatting and structure
-- Up-to-date code examples
-- Clear navigation and cross-references
-- Regular updates aligned with platform releases
+## TODO Placeholders
+Files are created as stubs to be iteratively filled. Open an issue before introducing major structural changes.
