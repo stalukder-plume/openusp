@@ -38,6 +38,13 @@ func middlewareUserAuth(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 			return
 		}
+		
+		// Skip authentication for health endpoint
+		if r.RequestURI == "/health" {
+			next.ServeHTTP(w, r)
+			return
+		}
+		
 		log.Println(r.RequestURI)
 		username, password, ok := r.BasicAuth()
 		if !ok {

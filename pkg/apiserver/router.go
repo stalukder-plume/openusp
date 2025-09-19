@@ -42,6 +42,8 @@ const (
 
 	GET_AGENTS  = "/get/agents/"
 	GET_MTPINFO = "/get/mtpinfo/"
+
+	HEALTH = "/health"
 )
 
 func (as *ApiServer) initRouter() error {
@@ -54,6 +56,7 @@ func (as *ApiServer) initRouter() error {
 
 func (as *ApiServer) setRoutesHandlers() error {
 	log.Println("Setting routing handlers")
+	as.router.HandleFunc(HEALTH, as.healthCheck).Methods("GET")
 	as.router.HandleFunc(GET_DM+"{epId}/{path}", as.getDm).Methods("GET")
 	as.router.HandleFunc(GET_PARAMS+"{epId}/{path}", as.getParams).Methods("GET")
 	as.router.HandleFunc(GET_INSTANCES+"{epId}/{path}", as.getInstances).Methods("GET")

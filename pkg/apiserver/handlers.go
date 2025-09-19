@@ -29,6 +29,16 @@ type uspData struct {
 	params map[string]string
 }
 
+func (as *ApiServer) healthCheck(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	response := map[string]interface{}{
+		"status": "healthy",
+		"service": "openusp-apiserver",
+	}
+	json.NewEncoder(w).Encode(response)
+}
+
 func (as *ApiServer) addInstance(w http.ResponseWriter, r *http.Request) {
 	if d, err := parseUspReq(r); err != nil {
 		httpSendRes(w, nil, err)
