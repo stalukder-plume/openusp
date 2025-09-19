@@ -102,7 +102,7 @@ For API development and testing:
 1. **Local Development**: Use the OpenAPI spec with tools like Postman or Insomnia
 2. **Code Generation**: Generate client SDKs using OpenAPI Generator
 3. **Testing**: Use the interactive Swagger UI for manual testing
-4. **Integration**: Integrate with CI/CD pipelines for automated API testing
+4. **Integration**: Use automated testing tools or frameworks for API validation
 
 ## OpenAPI Specification
 

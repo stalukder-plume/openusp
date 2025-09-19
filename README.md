@@ -2,8 +2,6 @@
 
 <div align="center">
 
-[![CI](https://github.com/stalukder-plume/openusp/actions/workflows/ci.yml/badge.svg)](https://github.com/stalukder-plume/openusp/actions/workflows/ci.yml)
-[![Security](https://github.com/stalukder-plume/openusp/actions/workflows/security.yml/badge.svg)](https://github.com/stalukder-plume/openusp/actions/workflows/security.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/stalukder-plume/openusp)](https://goreportcard.com/report/github.com/stalukder-plume/openusp)
 [![Release](https://img.shields.io/github/v/release/stalukder-plume/openusp?include_prereleases)](https://github.com/stalukder-plume/openusp/releases)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
@@ -34,8 +32,8 @@ git clone https://github.com/stalukder-plume/openusp.git
 cd openusp
 docker-compose -f deployments/docker-compose.yaml up -d
 
-# Health
-curl -f http://localhost:8081/api/v1/health
+# Health check (no authentication required)
+curl -f http://localhost:8081/health
 
 # Build CLI (optional)
 make build-cli
