@@ -25,6 +25,8 @@ fi
 
 # Start infrastructure services
 echo "📦 Starting MongoDB, ActiveMQ, Redis, and Swagger UI containers..."
+cd "$PROJECT_ROOT"
+export PROJECT_ROOT
 docker-compose -f "$COMPOSE_FILE" up -d
 
 # Wait for services to be ready
