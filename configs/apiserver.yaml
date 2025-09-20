@@ -20,7 +20,7 @@ database:
   password: "${DB_PASSWD:admin}"
   pool:
     maxConnections: ${DB_MAX_CONNECTIONS:10}
-    timeout: "${DB_TIMEOUT:30s}"
+    timeout: ${DB_TIMEOUT:30s}
 
 messageBus:
   stomp:
