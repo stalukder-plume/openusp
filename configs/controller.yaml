@@ -1,0 +1,85 @@
+# OpenUSP Controller Configuration
+service:
+  name: "openusp-controller"
+  version: "${SERVICE_VERSION:1.0.0}"
+  environment: "${ENVIRONMENT:development}"
+  debug: ${DEBUG:false}
+  metadata:
+    component: "controller"
+    team: "openusp"
+
+database:
+  type: "mongodb"
+  host: "${DB_HOST:localhost}"
+  port: ${DB_PORT:27017}
+  name: "${DB_NAME:usp}"
+  username: "${DB_USER:admin}"
+  password: "${DB_PASSWD:admin}"
+  pool:
+    maxConnections: ${DB_MAX_CONNECTIONS:10}
+    timeout: "${DB_TIMEOUT:30s}"
+
+messageBus:
+  stomp:
+    enabled: ${STOMP_ENABLED:true}
+    host: "${STOMP_HOST:localhost}"
+    port: ${STOMP_PORT:61613}
+    tlsPort: ${STOMP_TLS_PORT:61614}
+    mode: "${STOMP_MODE:nondtls}"
+    username: "${STOMP_USER:}"
+    password: "${STOMP_PASSWD:}"
+    queue: "${STOMP_CNTLR_QUEUE:/queue/controller-notify-dest}"
+    connRetry: ${STOMP_CONN_RETRY:5}
+    enableTLS: ${STOMP_ENABLE_TLS:false}
+    
+  mqtt:
+    enabled: ${MQTT_ENABLED:true}
+    host: "${MQTT_HOST:localhost}"
+    port: ${MQTT_PORT:1883}
+    mode: "${MQTT_MODE:nontls}"
+    username: "${MQTT_USER:}"
+    password: "${MQTT_PASSWD:}"
+    topic: "${MQTT_TOPIC:/usp/controller}"
+    clientId: "${MQTT_CLIENT_ID:openusp-controller}"
+    enableTLS: ${MQTT_ENABLE_TLS:false}
+    
+  coap:
+    enabled: ${COAP_ENABLED:true}
+    host: "${COAP_HOST:localhost}"
+    port: ${COAP_SERVER_PORT:5683}
+    dtlsPort: ${COAP_SERVER_DTLS_PORT:5684}
+    mode: "${COAP_SERVER_MODE:nondtls}"
+
+protocols:
+  grpc:
+    enabled: ${GRPC_ENABLED:true}
+    host: "${GRPC_HOST:0.0.0.0}"
+    port: ${CNTLR_GRPC_PORT:9001}
+    enableTLS: ${GRPC_ENABLE_TLS:false}
+    
+  websocket:
+    enabled: ${WS_ENABLED:true}
+    host: "${WS_HOST:0.0.0.0}"
+    port: ${WS_SERVER_PORT:8080}
+    tlsPort: ${WS_SERVER_TLS_PORT:8443}
+    path: "${WS_PATH:/usp}"
+    mode: "${WS_MODE:nontls}"
+    enableTLS: ${WS_ENABLE_TLS:false}
+
+security:
+  usp:
+    controllerEndpointId: "${CNTLR_EPID:self::openusp-controller}"
+    protocolVersion: "${CNTLR_USP_PROTO_VERSION:1.2}"
+    versionCheck: ${CNTLR_USP_PROTO_VERSION_CHECK:false}
+    
+  cache:
+    type: "redis"
+    host: "${CACHE_HOST:localhost}"
+    port: ${CACHE_PORT:6379}
+    password: "${CACHE_PASSWORD:}"
+    database: ${CACHE_DATABASE:0}
+
+logging:
+  level: "${LOG_LEVEL:info}"
+  format: "${LOG_FORMAT:json}"
+  output: "${LOG_OUTPUT:stdout}"

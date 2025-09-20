@@ -1,26 +1,50 @@
 # Deployment Guide
 
-This guide covers deployment strategies, environment setup, and operational procedures for the OpenUSP platform.
+This guide covers deployment strategies, environment setup, and operational procedures for the OpenUSP platform using YAML-based configuration.
 
 ## Deployment Strategies
 
 ### Local Development
 - Docker Compose for local testing
+- YAML configuration files
 - Hot-reload development environment
 - Local database instances
-- Mock external services
 
-### Staging Environment
+### Staging Environment  
 - Kubernetes cluster deployment
-- Production-like configuration
+- Environment-specific YAML configs
 - Integration testing automation
 - Performance testing
 
 ### Production Deployment
 - Multi-region Kubernetes
+- Secure configuration management
 - High availability setup
 - Auto-scaling configuration
 - Disaster recovery planning
+
+## Configuration Management
+
+OpenUSP uses YAML-based configuration with environment variable substitution:
+
+### Configuration Files Structure
+```
+configs/
+├── apiserver.yaml      # API server configuration
+├── controller.yaml     # Controller configuration
+├── cli.yaml           # CLI tool configuration
+└── cwmpacs.yaml       # CWMP ACS configuration
+```
+
+### Environment Variable Overrides
+All configuration values support environment variable substitution:
+```yaml
+database:
+  uri: ${OPENUSP_MONGO_URI:mongodb://localhost:27017}
+  name: ${OPENUSP_DB_NAME:openusp}
+```
+
+This allows for environment-specific deployments without changing configuration files.
 
 ## Prerequisites
 

@@ -1,0 +1,49 @@
+# OpenUSP CWMP ACS Configuration
+service:
+  name: "openusp-cwmpacs"
+  version: "${SERVICE_VERSION:1.0.0}"
+  environment: "${ENVIRONMENT:development}"
+  debug: ${DEBUG:false}
+  metadata:
+    component: "cwmpacs"
+    team: "openusp"
+
+database:
+  type: "mongodb"
+  host: "${DB_HOST:localhost}"
+  port: ${DB_PORT:27017}
+  name: "${DB_NAME:usp}"
+  username: "${DB_USER:admin}"
+  password: "${DB_PASSWD:admin}"
+  pool:
+    maxConnections: ${DB_MAX_CONNECTIONS:10}
+    timeout: "${DB_TIMEOUT:30s}"
+
+protocols:
+  cwmp:
+    enabled: ${CWMP_ACS_ENABLE:true}
+    host: "${CWMP_HOST:0.0.0.0}"
+    port: ${CWMP_ACS_PORT:7547}
+    tlsPort: ${CWMP_ACS_TLS_PORT:7548}
+    url: "${CWMP_ACS_URL:http://localhost:7547/cwmp}"
+    username: "${CWMP_ACS_USERNAME:admin}"
+    password: "${CWMP_ACS_PASSWORD:admin}"
+  
+  grpc:
+    enabled: ${GRPC_ENABLED:true}
+    host: "${GRPC_HOST:0.0.0.0}"
+    port: ${CNTLR_GRPC_PORT:9001}
+    enableTLS: ${GRPC_ENABLE_TLS:false}
+
+security:
+  cache:
+    type: "redis"
+    host: "${CACHE_HOST:localhost}"
+    port: ${CACHE_PORT:6379}
+    password: "${CACHE_PASSWORD:}"
+    database: ${CACHE_DATABASE:0}
+
+logging:
+  level: "${LOG_LEVEL:info}"
+  format: "${LOG_FORMAT:json}"
+  output: "${LOG_OUTPUT:stdout}"

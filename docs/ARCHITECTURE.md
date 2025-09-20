@@ -68,7 +68,9 @@ OpenUSP follows a cloud-native microservices architecture:
 
 ### API Server
 - **Purpose**: REST API and WebSocket endpoints
+- **Location**: `cmd/apiserver/` (entry point), `internal/apiserver/` (implementation)
 - **Technology**: Go with Gin framework
+- **Configuration**: `configs/apiserver.yaml`
 - **Features**:
   - Device management CRUD operations
   - Real-time WebSocket connections
@@ -78,7 +80,9 @@ OpenUSP follows a cloud-native microservices architecture:
 
 ### Controller
 - **Purpose**: USP message processing and device orchestration
+- **Location**: `cmd/controller/` (entry point), `internal/controller/` (implementation)
 - **Technology**: Go with gRPC for inter-service communication
+- **Configuration**: `configs/controller.yaml`
 - **Features**:
   - USP protocol implementation
   - Device lifecycle management
@@ -88,12 +92,24 @@ OpenUSP follows a cloud-native microservices architecture:
 
 ### CLI Tool
 - **Purpose**: Administrative operations and debugging
+- **Location**: `cmd/cli/` (entry point), `internal/cli/` (implementation)
 - **Technology**: Go with Cobra CLI framework
+- **Configuration**: `configs/cli.yaml`
 - **Features**:
   - Device provisioning and management
   - System monitoring and diagnostics
   - Bulk operations and automation
   - Integration testing utilities
+
+### CWMP ACS
+- **Purpose**: TR-069/CWMP protocol support for legacy devices
+- **Location**: `cmd/cwmpacs/` (entry point), `internal/cwmp/` (implementation)
+- **Technology**: Go with SOAP/XML processing
+- **Configuration**: `configs/cwmpacs.yaml`
+- **Features**:
+  - CWMP/TR-069 protocol implementation
+  - Legacy device management
+  - SOAP envelope processing
 
 ## Data Flow
 

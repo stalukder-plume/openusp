@@ -13,11 +13,11 @@ require (
 	github.com/gorilla/handlers v1.5.2
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.1
-	github.com/joho/godotenv v1.5.1
 	github.com/plgd-dev/go-coap/v2 v2.6.0
 	go.mongodb.org/mongo-driver v1.13.0
 	google.golang.org/grpc v1.59.0
 	google.golang.org/protobuf v1.31.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (

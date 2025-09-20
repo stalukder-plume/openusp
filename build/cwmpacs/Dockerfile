@@ -60,6 +60,9 @@ COPY --from=build-stage /app/cmd/cwmpacs/cwmpacs /opt/openusp/bin/cwmpacs
 COPY --chown=openusp:openusp build/common/entrypoint-common.sh /opt/openusp/scripts/entrypoint-common.sh
 COPY --chown=openusp:openusp build/cwmpacs/entrypoint.sh /opt/openusp/scripts/entrypoint.sh
 
+# Copy YAML configuration files
+COPY --chown=openusp:openusp configs/cwmpacs.yaml /opt/openusp/configs/cwmpacs.yaml
+
 # Make scripts executable
 RUN chmod +x /opt/openusp/scripts/*.sh
 

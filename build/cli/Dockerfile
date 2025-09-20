@@ -55,6 +55,9 @@ COPY --from=build-stage /app/cmd/cli/cli /opt/openusp/bin/cli
 COPY --chown=openusp:openusp build/common/entrypoint-common.sh /opt/openusp/scripts/entrypoint-common.sh
 COPY --chown=openusp:openusp build/cli/entrypoint.sh /opt/openusp/scripts/entrypoint.sh
 
+# Copy YAML configuration files
+COPY --chown=openusp:openusp configs/cli.yaml /opt/openusp/configs/cli.yaml
+
 # Make scripts executable
 RUN chmod +x /opt/openusp/scripts/*.sh
 

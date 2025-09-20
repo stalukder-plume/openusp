@@ -14,4 +14,4 @@
 # limitations under the License.
 
 # Cli
-docker run --env-file configs/openusp.env --network=openusp -it n4networks/openusp-cli "sleep infinity"
+docker run --env API_SERVER_ADDR=http://localhost:8081 --env API_SERVER_AUTH_NAME=admin --env API_SERVER_AUTH_PASSWD=admin --network=openusp -it n4networks/openusp-cli "sleep infinity"

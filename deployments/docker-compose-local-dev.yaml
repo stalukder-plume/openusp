@@ -1,0 +1,171 @@
+# Configuration anchors for reusability
+x-common-configs: &common-configs
+  restart: unless-stopped
+  networks:
+    - openusp-network
+
+x-healthcheck-defaults: &healthcheck-defaults
+  interval: 30s
+  timeout: 10s
+  retries: 3
+  start_period: 40s
+
+# Environment variables (can be overridden via shell environment or .env file)
+# Configuration is now primarily handled via YAML files with environment variable substitution
+x-environment: &environment
+  # Database Configuration
+  MONGO_VERSION: ${MONGO_VERSION:-latest}
+  MONGO_HOST: ${MONGO_HOST:-openusp-db}
+  MONGO_PORT: ${MONGO_PORT:-27017}
+  MONGO_DATABASE: ${MONGO_DATABASE:-openusp}
+  MONGO_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-admin}
+  MONGO_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-admin}
+  
+  # Message Broker Configuration
+  ACTIVEMQ_VERSION: ${ACTIVEMQ_VERSION:-mariadb_max_packet}
+  ACTIVEMQ_HOST: ${ACTIVEMQ_HOST:-openusp-broker}
+  ACTIVEMQ_STOMP_PORT: ${ACTIVEMQ_STOMP_PORT:-61613}
+  ACTIVEMQ_OPENWIRE_PORT: ${ACTIVEMQ_OPENWIRE_PORT:-61616}
+  ACTIVEMQ_WEB_PORT: ${ACTIVEMQ_WEB_PORT:-8161}
+  ACTIVEMQ_MQTT_PORT: ${ACTIVEMQ_MQTT_PORT:-1883}
+  
+  # Cache Configuration
+  REDIS_VERSION: ${REDIS_VERSION:-latest}
+  REDIS_HOST: ${REDIS_HOST:-openusp-cache}
+  REDIS_PORT: ${REDIS_PORT:-6379}
+  
+  # Swagger UI Configuration  
+  SWAGGER_VERSION: ${SWAGGER_VERSION:-latest}
+  SWAGGER_HOST_PORT: ${SWAGGER_HOST_PORT:-8080}
+
+services:
+  openusp-db:
+    <<: *common-configs
+    image: mongo:${MONGO_VERSION:-latest}
+    container_name: ${MONGO_HOST:-openusp-db}
+    hostname: ${MONGO_HOST:-openusp-db}
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:${MONGO_PORT:-27017}/${MONGO_DATABASE:-test}
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-admin}
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE:-openusp}
+    ports:
+      - "${MONGO_HOST_PORT:-27017}:${MONGO_PORT:-27017}"
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    command: --auth --bind_ip_all
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  openusp-broker:
+    <<: *common-configs
+    image: islandora/activemq:${ACTIVEMQ_VERSION:-mariadb_max_packet}
+    container_name: ${ACTIVEMQ_HOST:-openusp-broker}
+    hostname: ${ACTIVEMQ_HOST:-openusp-broker}
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "curl", "-f", "http://localhost:${ACTIVEMQ_WEB_PORT:-8161}/admin/"]
+    environment:
+      ACTIVEMQ_ADMIN_LOGIN: ${ACTIVEMQ_ADMIN_USER:-admin}
+      ACTIVEMQ_ADMIN_PASSWORD: ${ACTIVEMQ_ADMIN_PASSWORD:-admin}
+      ACTIVEMQ_CONFIG_MINMEMORY: ${ACTIVEMQ_MIN_MEMORY:-512}
+      ACTIVEMQ_CONFIG_MAXMEMORY: ${ACTIVEMQ_MAX_MEMORY:-2048}
+    ports:
+      - "${ACTIVEMQ_STOMP_HOST_PORT:-61613}:${ACTIVEMQ_STOMP_PORT:-61613}"      # STOMP
+      - "${ACTIVEMQ_STOMPS_HOST_PORT:-61614}:61614"     # STOMP+SSL
+      - "${ACTIVEMQ_OPENWIRE_HOST_PORT:-61616}:${ACTIVEMQ_OPENWIRE_PORT:-61616}" # OpenWire
+      - "${ACTIVEMQ_WEB_HOST_PORT:-8161}:${ACTIVEMQ_WEB_PORT:-8161}"            # Web Console
+      - "${ACTIVEMQ_MQTT_HOST_PORT:-1883}:${ACTIVEMQ_MQTT_PORT:-1883}"          # MQTT
+    volumes:
+      - activemq_data:/opt/activemq/data
+      - activemq_conf:/opt/activemq/conf
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  openusp-cache:
+    <<: *common-configs
+    image: redis:${REDIS_VERSION:-latest}
+    container_name: ${REDIS_HOST:-openusp-cache}
+    hostname: ${REDIS_HOST:-openusp-cache}
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "redis-cli", "ping"]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+    ports:
+      - "${REDIS_HOST_PORT:-6379}:${REDIS_PORT:-6379}"
+    volumes:
+      - redis_data:/data
+      - redis_conf:/usr/local/etc/redis
+    command: redis-server --appendonly yes --maxmemory ${REDIS_MAX_MEMORY:-256mb} --maxmemory-policy allkeys-lru
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  openusp-swagger:
+    <<: *common-configs
+    image: swaggerapi/swagger-ui:${SWAGGER_VERSION:-latest}
+    container_name: openusp-swagger
+    hostname: openusp-swagger
+    healthcheck:
+      <<: *healthcheck-defaults  
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/"]
+    environment:
+      SWAGGER_JSON: /api/openusp.yaml
+      API_URL: /api/openusp.yaml
+      DISPLAY_REQUEST_DURATION: true
+      TRY_IT_OUT_ENABLED: true
+      FILTER: true
+      DEEP_LINKING: true
+      SHOW_EXTENSIONS: true
+      SHOW_COMMON_EXTENSIONS: true
+      DEFAULT_MODELS_EXPAND_DEPTH: 2
+      DEFAULT_MODEL_EXPAND_DEPTH: 2
+    ports:
+      - "${SWAGGER_HOST_PORT:-8080}:8080"
+    volumes:
+      - ../api:/api:ro
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  openusp-network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: ${NETWORK_SUBNET:-172.20.0.0/16}
+
+volumes:
+  mongodb_data:
+    driver: local
+    name: openusp_mongodb_data
+  mongodb_config:
+    driver: local  
+    name: openusp_mongodb_config
+  activemq_data:
+    driver: local
+    name: openusp_activemq_data
+  activemq_conf:
+    driver: local
+    name: openusp_activemq_conf
+  redis_data:
+    driver: local
+    name: openusp_redis_data
+  redis_conf:
+    driver: local
+    name: openusp_redis_conf

@@ -62,8 +62,16 @@ services:
     depends_on:
       openusp-db:
         condition: service_healthy
-    env_file:
-      - ../configs/openusp.env
+    environment:
+      # Essential database connection variables
+      - DB_HOST=${DB_HOST:-openusp-db}
+      - DB_PORT=${DB_PORT:-27017}
+      - DB_USER=${DB_USER:-admin}
+      - DB_PASSWD=${DB_PASSWD:-admin}
+      - DB_NAME=${DB_NAME:-usp}
+      # Service-specific variables
+      - GRPC_PORT=${GRPC_PORT:-9001}
+      - ENVIRONMENT=${ENVIRONMENT:-production}
     ports:
       - 9001:9001
     networks:
@@ -80,8 +88,17 @@ services:
          condition: service_healthy
        openusp-controller:
          condition: service_started
-    env_file:
-      - ../configs/openusp.env
+    environment:
+      # Essential database connection variables
+      - DB_HOST=${DB_HOST:-openusp-db}
+      - DB_PORT=${DB_PORT:-27017}
+      - DB_USER=${DB_USER:-admin}
+      - DB_PASSWD=${DB_PASSWD:-admin}
+      - DB_NAME=${DB_NAME:-usp}
+      # Service-specific variables
+      - HTTP_PORT=${HTTP_PORT:-8081}
+      - GRPC_CONTROLLER_ADDRESS=${GRPC_CONTROLLER_ADDRESS:-openusp-controller:9001}
+      - ENVIRONMENT=${ENVIRONMENT:-production}
     ports:
       - 8081:8081
     networks:
@@ -97,8 +114,17 @@ services:
     depends_on:
        openusp-db:
          condition: service_healthy
-    env_file:
-      - ../configs/openusp.env
+    environment:
+      # Essential database connection variables
+      - DB_HOST=${DB_HOST:-openusp-db}
+      - DB_PORT=${DB_PORT:-27017}
+      - DB_USER=${DB_USER:-admin}
+      - DB_PASSWD=${DB_PASSWD:-admin}
+      - DB_NAME=${DB_NAME:-usp}
+      # CWMP ACS specific variables
+      - CWMP_HTTP_PORT=${CWMP_HTTP_PORT:-7547}
+      - CWMP_HTTPS_PORT=${CWMP_HTTPS_PORT:-7548}
+      - ENVIRONMENT=${ENVIRONMENT:-production}
     ports:
       - 7547:7547   # Standard TR-069 ACS port
       - 7548:7548   # HTTPS TR-069 ACS port
@@ -149,8 +175,18 @@ services:
       dockerfile: ./build/cli/Dockerfile
     image: n4networks/openusp-cli:latest
     container_name: openusp-cli
-    env_file:
-      - ../configs/openusp.env
+    environment:
+      # Essential database connection variables  
+      - DB_HOST=${DB_HOST:-openusp-db}
+      - DB_PORT=${DB_PORT:-27017}
+      - DB_USER=${DB_USER:-admin}
+      - DB_PASSWD=${DB_PASSWD:-admin}
+      - DB_NAME=${DB_NAME:-usp}
+      # CLI-specific variables
+      - API_SERVER_ADDR=${API_SERVER_ADDR:-http://openusp-apiserver:8081}
+      - API_SERVER_AUTH_NAME=${API_SERVER_AUTH_NAME:-admin}
+      - API_SERVER_AUTH_PASSWD=${API_SERVER_AUTH_PASSWD:-admin}
+      - ENVIRONMENT=${ENVIRONMENT:-production}
     stdin_open: true
     tty: true
     networks:

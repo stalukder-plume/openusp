@@ -1,0 +1,56 @@
+# OpenUSP CLI Configuration
+service:
+  name: "openusp-cli"
+  version: "${SERVICE_VERSION:1.0.0}"
+  environment: "${ENVIRONMENT:development}"
+  debug: ${DEBUG:false}
+  metadata:
+    component: "cli"
+    team: "openusp"
+
+database:
+  type: "mongodb"
+  host: "${DB_HOST:localhost}"
+  port: ${DB_PORT:27017}
+  name: "${DB_NAME:usp}"
+  username: "${DB_USER:admin}"
+  password: "${DB_PASSWD:admin}"
+
+messageBus:
+  stomp:
+    enabled: ${STOMP_ENABLED:true}
+    host: "${STOMP_HOST:localhost}"
+    port: ${STOMP_PORT:61613}
+    tlsPort: ${STOMP_TLS_PORT:61614}
+    mode: "${STOMP_MODE:nondtls}"
+    username: "${STOMP_USER:}"
+    password: "${STOMP_PASSWD:}"
+    queue: "${STOMP_CNTLR_QUEUE:/queue/controller-notify-dest}"
+    connRetry: ${STOMP_CONN_RETRY:5}
+    enableTLS: ${STOMP_ENABLE_TLS:false}
+
+protocols:
+  http:
+    enabled: true
+    host: "${API_SERVER_HOST:localhost}"
+    port: ${HTTP_PORT:8081}
+    enableTLS: ${HTTP_TLS:false}
+
+security:
+  auth:
+    type: "basic"
+    username: "${API_SERVER_AUTH_NAME:cli}"
+    password: "${API_SERVER_AUTH_PASSWD:admin}"
+    
+  usp:
+    agentId: "${AGENT_ID:os::012345-000000000000}"
+
+cli:
+  historyFilename: "${HISTORY_FILENAME:history}"
+  apiServerAddress: "${API_SERVER_ADDR:http://localhost:8081}"
+  controllerGrpcAddress: "${CNTLR_GRPC_ADDR:localhost:9001}"
+
+logging:
+  level: "${LOG_LEVEL:info}"
+  format: "${LOG_FORMAT:text}"
+  output: "${LOG_OUTPUT:stdout}"

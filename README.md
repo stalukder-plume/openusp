@@ -30,7 +30,9 @@ OpenUSP is a cloud-friendly control plane for managing heterogeneous broadband C
 ```bash
 git clone https://github.com/stalukder-plume/openusp.git
 cd openusp
-docker-compose -f deployments/docker-compose.yaml up -d
+
+# Start infrastructure services (MongoDB, ActiveMQ, Redis, Swagger UI)
+./scripts/start-infrastructure.sh
 
 # Health check (no authentication required)
 curl -f http://localhost:8081/health
@@ -42,10 +44,11 @@ make build-cli
 
 Endpoints:
 - REST API: `http://localhost:8081`
-- Swagger: `http://localhost:8080/swagger/` (if enabled)
+- Swagger UI: `http://localhost:8080` (interactive API documentation)
 - CWMP ACS: `http://localhost:7547`
+- ActiveMQ Console: `http://localhost:8161/admin` (admin/admin)
 
-Stop stack: `docker-compose -f deployments/docker-compose.yaml down -v`
+Stop stack: `./scripts/stop-applications.sh && docker-compose -f deployments/docker-compose-local-dev.yaml down`
 
 ---
 
@@ -62,17 +65,27 @@ Artifacts land in `./build/bin`.
 
 ---
 
-## 4. Minimal Configuration
-Most evaluation scenarios work with defaults from `deployments/docker-compose.yaml`.
+## 4. Configuration
+OpenUSP uses YAML-based configuration with environment variable substitution.
 
-Useful environment overrides:
+Configuration files:
 ```bash
-export OPENUSP_MONGO_URI=mongodb://mongo:27017
-export OPENUSP_REDIS_ADDR=redis:6379
-export OPENUSP_AMQ_URI=stomp://activemq:61613
-export OPENUSP_LOG_LEVEL=info
+configs/apiserver.yaml   # API server settings
+configs/controller.yaml  # Controller settings  
+configs/cli.yaml        # CLI configuration
+configs/cwmpacs.yaml    # CWMP ACS settings
 ```
-See `docs/CONFIGURATION.md` for the full matrix (to be filled).
+
+Environment variable substitution syntax:
+```yaml
+database:
+  uri: ${OPENUSP_MONGO_URI:mongodb://localhost:27017}
+  name: ${OPENUSP_DB_NAME:openusp}
+redis:
+  addr: ${OPENUSP_REDIS_ADDR:localhost:6379}
+```
+
+See `docs/CONFIGURATION.md` and `docs/YAML_CONFIGURATION.md` for detailed configuration options.
 
 ---
 
@@ -103,14 +116,25 @@ Details: `docs/RELEASES.md`.
 
 ---
 
-## 7. Project Layout (Selected)
+## 7. Project Layout (Go Standard Layout)
 ```
-cmd/            # Entry points (apiserver, controller, cli, cwmpacs)
-pkg/            # Internal packages (protocols, db, mtp, etc.)
-deployments/    # Compose / (future) Helm manifests
+cmd/            # Application entry points (apiserver, controller, cli, cwmpacs)
+internal/       # Private application code (not importable by other projects)
+  ├─ apiserver/ # REST API server implementation
+  ├─ controller/# USP/CWMP controller logic
+  ├─ cli/       # Command-line interface
+  ├─ cwmp/      # CWMP protocol handlers
+  ├─ db/        # Database access layer
+  ├─ mtp/       # Message Transport Protocol
+  └─ parser/    # Protocol message parsing
+pkg/            # Public libraries (importable by external projects)
+  ├─ config/    # YAML configuration management
+  └─ pb/        # Protocol Buffer definitions
+configs/        # YAML configuration files
+deployments/    # Docker Compose manifests
 scripts/        # Release + utility scripts
-docs/           # Extended documentation (stubs)
-api/            # API spec / swagger helpers
+docs/           # Extended documentation
+api/            # OpenAPI/Swagger specifications
 ```
 
 ---

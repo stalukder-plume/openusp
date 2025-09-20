@@ -20,7 +20,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/n4-networks/openusp/pkg/cwmp"
+	"github.com/n4-networks/openusp/internal/cwmp"
 )
 
 func main() {

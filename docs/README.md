@@ -1,26 +1,76 @@
 # OpenUSP Documentation Index
 
-This folder contains detailed documentation referenced from the root README. Each document is intentionally scoped and should stay concise and task‑focused.
+This directory contains comprehensive documentation for the OpenUSP platform following the current Go standard layout and YAML-based configuration system.
 
 ## Index
 
-| Document | Purpose |
-|----------|---------|
-| [ARCHITECTURE.md](ARCHITECTURE.md) | High-level system design, component boundaries, data flows |
-| [COMPONENTS.md](COMPONENTS.md) | Detailed description of each service/component and its responsibilities |
-| [DEVELOPMENT.md](DEVELOPMENT.md) | Local dev environment setup, build, test, lint, debug workflows |
-| [DEPLOYMENT.md](DEPLOYMENT.md) | Deployment options (Docker Compose, Kubernetes, production hardening) |
-| [CONFIGURATION.md](CONFIGURATION.md) | Environment variables, configuration files, secrets, TLS |
-| [SECURITY.md](SECURITY.md) | Security model, authn/z, certificates, vulnerability scanning |
-| [OPERATIONS.md](OPERATIONS.md) | Monitoring, metrics, logging, tracing, troubleshooting |
-| [RELEASES.md](RELEASES.md) | Semantic versioning, tagging, Docker image strategy, upgrade notes |
-| [PROTOCOLS.md](PROTOCOLS.md) | USP (TR-369) & CWMP (TR-069) protocol behavior, mapping, extensions |
-| [API.md](API.md) | REST/CLI usage pointers and linkouts to generated references |
+| Document | Purpose | Status |
+|----------|---------|--------|
+| [ARCHITECTURE.md](ARCHITECTURE.md) | System design, microservices architecture, Go standard layout | ✅ Updated |
+| [COMPONENTS.md](COMPONENTS.md) | Service descriptions, package structure, inter-service communication | ✅ Updated |
+| [CONFIGURATION.md](CONFIGURATION.md) | YAML configuration, environment variables, production setup | ✅ Updated |
+| [YAML_CONFIGURATION.md](YAML_CONFIGURATION.md) | Detailed YAML configuration system documentation | ✅ Current |
+| [DEVELOPMENT.md](DEVELOPMENT.md) | Development environment, Go standard layout, build workflows | ✅ Updated |
+| [DEPLOYMENT.md](DEPLOYMENT.md) | Docker Compose, Kubernetes deployment with YAML configs | ✅ Updated |
+| [API.md](API.md) | REST API documentation and usage examples | 📝 Needs Update |
+| [DATABASE.md](DATABASE.md) | Database schema, migrations, access patterns | 📝 Needs Update |
+| [SECURITY.md](SECURITY.md) | Authentication, authorization, TLS configuration | 📝 Needs Update |
+| [OPERATIONS.md](OPERATIONS.md) | Monitoring, logging, troubleshooting | 📝 Needs Update |
+| [RELEASES.md](RELEASES.md) | Release process, versioning, Docker images | 📝 Needs Update |
+| [PROTOCOLS.md](PROTOCOLS.md) | USP (TR-369) & CWMP (TR-069) protocol implementation | 📝 Needs Update |
+| [CWMP.md](CWMP.md) | CWMP/TR-069 specific documentation | 📝 Needs Update |
+| [USP.md](USP.md) | USP/TR-369 specific documentation | 📝 Needs Update |
 
-## Contribution Notes
-- Keep root README brief—deep explanations belong here.
-- Prefer linking between docs instead of duplicating content.
-- Add diagrams as `.drawio` or `.svg` alongside the doc that references them.
+## Recent Updates (September 2025)
 
-## TODO Placeholders
-Files are created as stubs to be iteratively filled. Open an issue before introducing major structural changes.
+### ✅ Completed Migrations
+- **Go Standard Layout**: Migrated from `pkg/` to `internal/` + `pkg/` structure
+- **YAML Configuration**: Replaced environment-only config with structured YAML files
+- **Docker Integration**: Updated Dockerfiles to use YAML configurations
+- **Service Architecture**: Refactored microservices following Go best practices
+
+### 📁 Current Project Structure
+```
+openusp/
+├── cmd/                  # Application entry points
+├── internal/            # Private application code  
+├── pkg/                # Public libraries (config, pb)
+├── configs/            # YAML configuration files
+├── deployments/        # Docker deployment manifests
+└── docs/              # This documentation
+```
+
+### 🔧 Configuration System
+- **Service Configs**: `configs/{apiserver,controller,cli,cwmpacs}.yaml`
+- **Environment Substitution**: `${VAR_NAME:default_value}` syntax
+- **Type Safety**: Structured YAML with validation
+- **Migration**: Complete removal of `.env` file dependencies
+
+## Navigation Guide
+
+### 🚀 Getting Started
+1. [DEVELOPMENT.md](DEVELOPMENT.md) - Set up your development environment
+2. [CONFIGURATION.md](CONFIGURATION.md) - Understand the YAML configuration system
+3. [DEPLOYMENT.md](DEPLOYMENT.md) - Deploy with Docker Compose
+
+### 🏗️ Architecture & Design
+1. [ARCHITECTURE.md](ARCHITECTURE.md) - High-level system overview
+2. [COMPONENTS.md](COMPONENTS.md) - Detailed component breakdown
+3. [YAML_CONFIGURATION.md](YAML_CONFIGURATION.md) - Configuration deep dive
+
+### 🔧 Operations
+1. [OPERATIONS.md](OPERATIONS.md) - Monitoring and troubleshooting
+2. [SECURITY.md](SECURITY.md) - Security implementation
+3. [RELEASES.md](RELEASES.md) - Release and upgrade procedures
+
+## Contribution Guidelines
+- Keep root README.md brief—detailed explanations belong in this docs/ directory
+- Update documentation when making architectural changes
+- Use consistent formatting and cross-reference related documents
+- Include code examples in configuration and development guides
+
+## Status Legend
+- ✅ **Updated**: Recently updated to reflect current codebase
+- 📝 **Needs Update**: Contains outdated information requiring revision  
+- 🆕 **New**: Recently created documentation
+- ❌ **Deprecated**: No longer relevant to current architecture

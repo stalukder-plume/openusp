@@ -18,7 +18,7 @@ import (
 	"flag"
 	"log"
 
-	"github.com/n4-networks/openusp/pkg/cntlr"
+	controller "github.com/n4-networks/openusp/internal/controller"
 )
 
 func main() {
@@ -29,7 +29,7 @@ func main() {
 	flag.BoolVar(&cliMode, "c", false, "run with cli")
 	flag.Parse()
 
-	var c cntlr.Cntlr
+	var c controller.Cntlr
 	err = c.Init()
 	if err != nil {
 		log.Println("Could not initialize Mtp, err:", err)

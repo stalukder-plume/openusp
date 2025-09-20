@@ -1,7 +1,7 @@
 BIN=apiserver
 
 BUILDFLAGS=CGO_ENABLED=0 
-LDFLAGS=-ldflags "-X github.com/n4-networks/openusp/pkg/cntlr.buildtime=`date +%Y-%m-%d.%H:%M:%S`"
+LDFLAGS=-ldflags "-X github.com/n4-networks/openusp/internal/controller.buildtime=`date +%Y-%m-%d.%H:%M:%S`"
 
 build: *.go
 	@echo "Building OpenUSP ApiServer..."

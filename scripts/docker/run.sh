@@ -15,10 +15,10 @@
 
 
 # Controller
-docker run --env-file configs/openusp.env n4networks/openusp-controller
+docker run --env DB_HOST=localhost --env DB_USER=admin --env DB_PASSWD=admin n4networks/openusp-controller
 
-# ApiServer
-docker run --env-file configs/openusp.env n4networks/openusp-apiserver
+# ApiServer  
+docker run --env DB_HOST=localhost --env DB_USER=admin --env DB_PASSWD=admin n4networks/openusp-apiserver
 
 # Cli
-docker run --env-file configs/openusp.env --network=openusp -it n4networks/openusp-cli
+docker run --env API_SERVER_ADDR=http://localhost:8081 --env API_SERVER_AUTH_NAME=admin --env API_SERVER_AUTH_PASSWD=admin --network=openusp -it n4networks/openusp-cli

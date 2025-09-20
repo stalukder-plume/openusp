@@ -1,12 +1,12 @@
 # Development Guide
 
-This guide covers setting up a development environment and contributing to the OpenUSP platform.
+This guide covers setting up a development environment and contributing to the OpenUSP platform following Go standard layout principles.
 
 ## Prerequisites
 
 ### Required Tools
 - **Go**: Version 1.21 or later
-- **Docker**: Version 20.10 or later
+- **Docker**: Version 20.10 or later  
 - **Docker Compose**: Version 2.0 or later
 - **Git**: Version 2.30 or later
 - **Make**: GNU Make 4.0 or later
@@ -16,13 +16,40 @@ This guide covers setting up a development environment and contributing to the O
 - **air**: Live reload during development
 - **delve**: Go debugger
 - **grpcurl**: gRPC testing tool
-- **jq**: JSON processing
+- **yq**: YAML processing tool
+
+## Project Structure (Go Standard Layout)
+
+The project follows Go standard layout principles:
+
+```
+openusp/
+├── cmd/                  # Application entry points
+│   ├── apiserver/       # REST API server
+│   ├── controller/      # USP message processor  
+│   ├── cli/            # Command-line interface
+│   └── cwmpacs/        # CWMP ACS server
+├── internal/            # Private application code
+│   ├── apiserver/      # API server implementation
+│   ├── controller/     # Controller business logic
+│   ├── cli/           # CLI implementation
+│   ├── cwmp/          # CWMP protocol handlers
+│   ├── db/            # Database access layer
+│   ├── mtp/           # Message Transport Protocol
+│   └── parser/        # Protocol parsing logic
+├── pkg/                # Public libraries
+│   ├── config/        # Configuration management
+│   └── pb/            # Protocol Buffer definitions
+├── configs/            # YAML configuration files
+├── deployments/        # Docker Compose manifests
+└── docs/              # Documentation
+```
 
 ## Environment Setup
 
 ### 1. Clone Repository
 ```bash
-git clone https://github.com/your-org/openusp.git
+git clone https://github.com/stalukder-plume/openusp.git
 cd openusp
 ```
 
@@ -37,16 +64,23 @@ go install github.com/cosmtrek/air@latest
 # Install delve debugger
 go install github.com/go-delve/delve/cmd/dlv@latest
 
+# Install yq for YAML processing
+go install github.com/mikefarah/yq/v4@latest
+
 # Verify installation
 golangci-lint --version
 air -v
 dlv version
+yq --version
 ```
 
-### 3. Environment Configuration
+### 3. Configuration Setup
+OpenUSP uses YAML-based configuration. The default configuration files are in `configs/`:
+
 ```bash
-# Copy environment template
-cp configs/openusp.env.example configs/openusp.env
+# Review configuration files
+ls configs/
+# apiserver.yaml  cli.yaml  controller.yaml  cwmpacs.yaml
 
 # Edit configuration
 vim configs/openusp.env
